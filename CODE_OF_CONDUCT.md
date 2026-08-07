@@ -11,6 +11,4 @@ This project adopts the [Contributor Covenant v2.1](https://www.contributor-cove
 
 ## Reporting
 
-Concerns about conduct can be reported privately to the maintainer at **agricidaniel@gmail.com**. Reports are confidential. Response within a reasonable timeframe.
-
 For the full standard text (including specific examples of acceptable and unacceptable behavior, enforcement guidelines, and attribution), see the [Contributor Covenant homepage](https://www.contributor-covenant.org/).
