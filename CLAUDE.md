@@ -99,10 +99,23 @@ This generates a blog post on https://agricidaniel.com/blog/, handles cover imag
 This vault extends the stock `wiki-ingest` flow with a mandatory provenance rule. `.raw/` is the inbox (upstream convention — files there are immutable). `.sources/` is the full-text archive that backs `raw_file:` drill-down (git-ignored, invisible to Obsidian).
 
 1. **Binary sources** (PDF, DOCX, PPTX, XLSX, …) dropped in `.raw/`: convert BEFORE ingesting.
-   **Default converter: docling** (layout-aware — real paragraphs, headings, Markdown tables):
-   `docling "<file>" --image-export-mode placeholder --output "<vault>/.sources/Ingested/"`
-   then rename the output to keep the original extension in the name (e.g. `report.pdf.md`). ALWAYS pass `--image-export-mode placeholder` (default embeds images as huge base64 blobs). Fallback: `markitdown` for formats docling can't handle. Read the converted md for the ingest, leave the original in `.raw/` untouched, and set the source page's frontmatter:
-   `raw_file: "<vault>/.sources/Ingested/<name>.<origext>.md"` (absolute forward-slash path)
+   **Default converter: `scripts/convert.py`** (wraps docling with placeholder
+   images, OCR-off default, per-format handlers, and QA flags — see the
+   corpus-convert skill). Run it with an interpreter that has the conversion
+   deps installed — check `CLAUDE.local.md` for this machine's interpreter
+   path; do NOT call a bare `docling` found on PATH (it may resolve to an
+   unrelated environment's copy):
+   `<conv-python> scripts/convert.py "<file>" -o "<vault>/.sources/<Tier folder>/<name>.<ext>.md"`
+   **Output goes into the tier folder matching the document's curation tier**
+   (e.g. `.sources/Tier 1/`) — the corpus indexer stamps each chunk's `tier`
+   from the top-level folder, and the ranking bonus depends on it. Keep the
+   original extension in the filename (e.g. `report.pdf.md`). Fallback:
+   `markitdown` for formats the pipeline can't handle.
+   **Known docling failure mode:** it can silently DROP whole pages and
+   truncate table cells at page breaks (exit 0, no warning) — observed on a
+   190-page PDF, pp.77/81-86/101-102/136-137 lost. The QA gate below is the
+   only reliable catch; never skip it for multi-page PDFs. Read the converted md for the ingest, leave the original in `.raw/` untouched, and set the source page's frontmatter:
+   `raw_file: "<vault>/.sources/<Tier folder>/<name>.<origext>.md"` (absolute forward-slash path)
    **QA gate (mandatory after every conversion):** run `bash bin/review-conversion.sh "<converted.md>" "<original file>"` — an independent claude-CLI review that Reads BOTH the original document (PDFs as rendered pages) and the converted md, verifying completeness (nothing dropped), accuracy (numbers/tables spot-checked, no column interleaving), human-readability, and machine-readability. Always pass the original when it exists (fidelity mode also distinguishes conversion errors from errors present in the source); md-only mode is the fallback when the original is unavailable. Exit 0 (PASS) → proceed to ingest; note any listed issues in the source page's Notes section if material. Exit 1 (FAIL) → follow the RECOMMENDATION line (usually the LLM finishing layer below; re-run the review after fixing). Exit 2 → tooling error, fix before proceeding.
    **LLM finishing layer (triggered by QA FAIL, or opt-in per document):** for scanned PDFs (docling output empty/garbled — no text layer) or documents the operator wants to read cover-to-cover, produce the md by reading the original directly (Claude can read PDFs) and writing clean natural Markdown; add `converted_by: claude` to a comment at the top of the file. Docling output may also be polished this way — fix spacing artifacts, reflow, restore split words; never alter content.
 2. **Text/Markdown sources** already in `.raw/` (including URL ingests saved to `.raw/articles/`): no conversion; set `raw_file:` to the absolute forward-slash path of the `.raw/` file itself.

@@ -221,6 +221,31 @@ def test_query_tier_unavailable_on_garbage():
     assert_eq("unparseable stdout -> unavailable", "unavailable", t["status"])
 
 
+# ─── per-document diversification ────────────────────────────────────────────
+def test_diversify_caps_chunks_per_document():
+    cr = import_script("cr_div", SCRIPTS / "corpus-retrieve.py")
+    from collections import Counter
+    # Enough documents: the cap strictly binds.
+    ranked = ([{"page_path": "A", "n": i} for i in range(5)]
+              + [{"page_path": p, "n": 9} for p in "BCD"])
+    counts = Counter(c["page_path"] for c in cr._diversify(ranked, top=5))
+    assert_eq("doc A capped at 2 when others can fill", 2, counts["A"])
+    assert_true("B, C, D all surface",
+                counts["B"] == counts["C"] == counts["D"] == 1)
+    # Few documents: backfill takes a third A rather than starving top.
+    ranked = ([{"page_path": "A", "n": i} for i in range(5)]
+              + [{"page_path": "B", "n": 9}, {"page_path": "C", "n": 10}])
+    out = cr._diversify(ranked, top=5)
+    counts = Counter(c["page_path"] for c in out)
+    assert_eq("five results returned", 5, len(out))
+    assert_true("minority docs never crowded out",
+                counts["B"] == 1 and counts["C"] == 1)
+    assert_eq("A backfills the remainder", 3, counts["A"])
+    # backfill: only one document available -> cap yields, overflow fills
+    out2 = cr._diversify([{"page_path": "X", "n": i} for i in range(6)], top=4)
+    assert_eq("single-doc corpus backfills to top", 4, len(out2))
+
+
 # ─── corpus tier end-to-end in a sandbox: build, corrupt, self-heal ──────────
 def test_corpus_e2e_corrupt_index_self_heals():
     import shutil
@@ -277,6 +302,7 @@ def main():
     test_query_tier_rebuilt_ok()
     test_query_tier_unavailable_on_rc()
     test_query_tier_unavailable_on_garbage()
+    test_diversify_caps_chunks_per_document()
     test_corpus_e2e_corrupt_index_self_heals()
     print(f"\nAll corpus-layer tests passed ({_passed} assertions).")
 

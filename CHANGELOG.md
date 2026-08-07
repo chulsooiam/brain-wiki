@@ -4,7 +4,15 @@ All notable changes to brain-wiki. Format: [Keep a Changelog](https://keepachang
 
 ## [Unreleased]
 
-<!-- no unreleased changes yet -->
+### Added
+
+- **`scripts/conversion-audit.py`** — corpus-wide conversion fidelity sweep: vocabulary recall of every converted PDF against `pdftotext` ground truth, flagging conversions below a threshold (default 97%). Motivated by a field incident: docling silently dropped whole pages (exit 0, no warning) from a 190-page PDF; a corpus audit then found 18/79 conversions under 97% recall, including one at 37.5% that a fresh reconversion fully recovered. The per-file QA gate catches this for reviewed documents; the sweep catches it retroactively at corpus scale.
+- **`CLAUDE.local.md` convention** (gitignored): machine-specific conversion-interpreter path and environment prohibitions live in an untracked local memory file that Claude Code merges automatically, keeping tracked docs machine-agnostic.
+
+### Changed
+
+- **CLAUDE.md conversion doctrine hardened**: conversions route through `scripts/convert.py` (never a bare `docling` from PATH, which can resolve to an unrelated environment's copy) and output into the curation-tier folder under `.sources/` (a generic `Ingested/` folder would mis-stamp the corpus chunks' `tier` and forfeit the ranking bonus). Docling's silent page-drop failure mode is now documented inline with the instruction to never skip the QA gate for multi-page PDFs.
+- **`scripts/corpus-retrieve.py` per-document diversification**: final results cap at 2 chunks per document (backfilling when the corpus is narrow), so a single long PDF can no longer monopolize the top-k; rerank over-fetch raised accordingly. Regression tests in `tests/test_corpus_layer.py`.
 
 ## [2.0.0] - 2026-08-07 (the professional-corpus release)
 

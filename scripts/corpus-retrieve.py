@@ -140,6 +140,25 @@ def ensure_index(auto_build=True):
     return None
 
 
+def _diversify(ranked, top, per_doc=2):
+    """Cap chunks per document in the final cut so one long PDF cannot
+    monopolize the result list (chunk-level results are the point of the
+    corpus tier, but 5/5 slots on one file starves cross-checking).
+    Backfills with over-capped chunks only when fewer than `top` documents
+    qualify, so nothing is lost on narrow corpora."""
+    picked, overflow, seen = [], [], {}
+    for c in ranked:
+        page = c.get("page_path", "")
+        if seen.get(page, 0) < per_doc:
+            picked.append(c)
+            seen[page] = seen.get(page, 0) + 1
+        else:
+            overflow.append(c)
+        if len(picked) == top:
+            return picked
+    return (picked + overflow)[:top]
+
+
 def load(name, filename):
     spec = importlib.util.spec_from_file_location(
         name, str(VAULT_ROOT / "scripts" / filename))
@@ -233,9 +252,10 @@ def main():
         # already computed at import, so the cache stays shared with the wiki
         # tier — a passage embedded once is free for both.
         reranker.VAULT_ROOT = VAULT_ROOT / ".vault-meta"
-        # Over-fetch so the tier bonus can reorder near-equals at the cut line.
+        # Over-fetch so the tier bonus can reorder near-equals at the cut
+        # line and per-document diversification has spare material.
         candidates = reranker.rerank(args.query, candidates,
-                                     top_k=min(args.top + 5, len(candidates)),
+                                     top_k=min(args.top + 10, len(candidates)),
                                      allow_remote=args.allow_remote_ollama)
         strategy = "bm25+rerank:" + (candidates[0].get("rerank_source", "?")
                                      if candidates else "?")
@@ -245,7 +265,7 @@ def main():
                 base = 0.0
             c["final_score"] = base + TIER_BONUS.get(c.get("tier", ""), 0.0)
         candidates.sort(key=lambda c: c["final_score"], reverse=True)
-        candidates = candidates[: args.top]
+        candidates = _diversify(candidates, args.top)
     else:
         # BM25 scores are unbounded, so normalize before adding the bonus.
         top_score = max((c["bm25_score"] for c in candidates), default=1.0) or 1.0
@@ -253,7 +273,7 @@ def main():
             c["final_score"] = (c["bm25_score"] / top_score
                                 + TIER_BONUS.get(c.get("tier", ""), 0.0))
         candidates.sort(key=lambda c: c["final_score"], reverse=True)
-        candidates = candidates[: args.top]
+        candidates = _diversify(candidates, args.top)
 
     if args.json:
         print(json.dumps({"query": args.query, "strategy": strategy,

@@ -146,3 +146,6 @@ _attachments/
 
 # Local source corpus (converted originals, 132MB) - never track
 .sources/
+
+# machine-local Claude Code memory
+CLAUDE.local.md
