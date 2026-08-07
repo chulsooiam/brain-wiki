@@ -1,0 +1,30 @@
+cff-version: 1.2.0
+title: brain-wiki
+message: >-
+  If you use this software, please cite it using the metadata from this file.
+type: software
+authors:
+  - alias: chulsooiam
+repository-code: 'https://github.com/chulsooiam/brain-wiki'
+url: 'https://github.com/chulsooiam/brain-wiki'
+license: MIT
+version: 2.0.0
+date-released: '2026-08-07'
+keywords:
+  - obsidian
+  - claude-code
+  - knowledge-management
+  - second-brain
+  - pkm
+  - llm-wiki
+  - rag
+  - corpus-retrieval
+references:
+  - type: software
+    title: claude-obsidian
+    authors:
+      - alias: AgriciDaniel
+    repository-code: 'https://github.com/AgriciDaniel/claude-obsidian'
+    license: MIT
+    notes: >-
+      brain-wiki is derived from claude-obsidian v1.9.2. See ATTRIBUTION.md.
