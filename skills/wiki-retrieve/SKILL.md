@@ -204,7 +204,7 @@ Documented for transparency; not implemented in v1.7.0:
 
 - Decision tree for transports: [`wiki/references/transport-fallback.md`](../../wiki/references/transport-fallback.md)
 - Concurrency policy: [`skills/wiki-ingest/SKILL.md`](../wiki-ingest/SKILL.md) §Concurrency
-- DragonScale Memory: [`wiki/concepts/DragonScale Memory.md`](../../wiki/concepts/DragonScale%20Memory.md)
+- DragonScale addresses: [`skills/wiki-ingest/SKILL.md`](../wiki-ingest/SKILL.md) §Address Assignment (the `DragonScale Memory` concept page is created per-vault, not shipped)
 - Anthropic Contextual Retrieval research: https://www.anthropic.com/news/contextual-retrieval
 
 ---
