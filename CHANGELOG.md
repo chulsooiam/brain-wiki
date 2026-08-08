@@ -4,8 +4,13 @@ All notable changes to brain-wiki. Format: [Keep a Changelog](https://keepachang
 
 ## [Unreleased]
 
+## [2.4.0] - 2026-08-08 (meetings change pages, not just links)
+
+Links make a meeting *findable* from an entity page; they do not update what the page *says*. This release closes that gap in both directions: prose pages join the link graph, and meeting content propagates into page prose under an explicit evidence hierarchy.
+
 ### Added
 
+- **Backlog-sweep pattern** (`transcript-distill` §Content propagation): adopting the propagation rule after a backfill leaves every already-distilled entry unpropagated. Documented two-phase sweep — extract candidates as structured data (agents propose, edit nothing; validate page names and heading anchors at the barrier), then apply **grouped by target page** so each page has exactly one writer and that writer sees all its candidates at once, which is the only way to catch a March candidate superseded by a June one. Phase-2 agents must re-judge against the live page; extraction agents work from entries alone and cannot know what a page already says.
 - **Content-propagation doctrine** (`transcript-distill` §Content propagation): meetings update wiki pages on two clocks — per-transcript for sharp changes (a meeting that changes a status, decision, role or date updates the affected entity/concept page immediately, with the register entry cited inline), and a periodic consolidation pass for slow drift (pages whose backlinks gained new entries get durable facts folded in). Deliberately asymmetric evidence handling: meeting speech annotates document-sourced facts with attribution and contradiction callouts, never silently replaces them — a reader can always tell document-fact from meeting-fact by the citation.
 - **`register-link.py --prose`** — extends the wikilink pass from register entries to entity/concept prose pages, densifying the middle of the graph. Prose-specific rules: one link per target per *page* (first mention wins), YAML frontmatter split off before matching so `related:`/`sources:` lists cannot be corrupted, heading lines protected, and frontmatter wikilinks do not spend the budget (the first body mention still gets its reader-visible link). All register-mode safeguards carry over: idempotency, fence/code protection, self-link prevention, longest-alias-wins. Field result: 161 links across 82 pages to 42 targets, zero on re-run, frontmatter verified intact on all 82. Nine prose-mode cases added to `tests/test_register_scripts.py`.
 

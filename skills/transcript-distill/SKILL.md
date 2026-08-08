@@ -187,6 +187,30 @@ The asymmetry is the point: document-sourced facts are only ever
 *annotated* by meetings, never silently replaced — a reader can always
 tell document-fact from meeting-fact by the citation.
 
+> [!tip] Adopting this after a backfill — sweep the backlog in two phases
+> Entries distilled before the rule existed never propagated. Do not
+> re-read them page-by-page; run a two-phase sweep, and note that the
+> phase boundary is a **barrier for a reason**:
+>
+> 1. **Extract** — one agent per register reads its entries and emits
+>    candidates as structured data (`target_page`, `kind`, `claim`,
+>    `entry_heading` verbatim, `conflicts`, `evidence`). Agents propose
+>    only; they edit nothing. Validate every `target_page` against the
+>    pages that exist and every `entry_heading` against real headings
+>    before going on.
+> 2. **Apply** — group candidates **by target page**, then one agent per
+>    group. Grouping is what makes this safe: each page has exactly one
+>    writer, so parallel agents cannot conflict, and the writer sees all
+>    of a page's candidates at once — which is the only way to notice
+>    that a March candidate is superseded by a June one.
+>
+> Phase-2 agents must **re-judge** every candidate against the live page
+> and drop what it already says. Extraction agents work from entries
+> alone and cannot know that. Field result on a 185-entry backlog: 114
+> candidates extracted, 112 applied across 34 pages, 12 contradictions
+> surfaced that no single reader had noticed — several of them the
+> *document* being stale rather than the meeting being wrong.
+
 ---
 
 ## Recording tails — cut them off
