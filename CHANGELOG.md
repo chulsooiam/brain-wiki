@@ -4,6 +4,19 @@ All notable changes to brain-wiki. Format: [Keep a Changelog](https://keepachang
 
 ## [Unreleased]
 
+## [2.1.0] - 2026-08-08 (meeting-note registers)
+
+Meetings promoted to a first-class input stream. For professional vaults, decisions and action points live in meetings more than in documents — but per-meeting pages scatter them and raw transcripts bury them below the wiki tier. Register mode concentrates them on a handful of Tier-1 pages routed by the owner's actual responsibilities.
+
+### Added
+
+- **Meeting-note registers** (`transcript-distill` Register mode + `_templates/meeting-register.md`): a small fixed set of Tier-1 register pages — one per responsibility area plus a fallback — each accumulating compact meeting entries newest-first (name, participants, mandatory start date/duration, agenda, decisions, action points, notable items, source link). Because registers are `tier: "1"` source pages, distilled decisions outrank raw transcript chunks in hybrid retrieval — meeting outcomes surface in `/wiki-query` and `/combined-query` answers instead of hiding in the corpus tier.
+- **Responsibility-list routing**: each register's Scope section carries the owner's own responsibility list verbatim, and transcripts are classified by which list their substance serves — never by meeting title or filename-inferred themes. Field-tested correction baked into the doctrine: scope extrapolated from transcript filenames misattributed work the owner does not do; only an owner-supplied list is authoritative.
+
+### Changed
+
+- **`transcript-distill`** gains Register mode alongside the single-page workflow; the two coexist (a load-bearing meeting can hold both a register entry and a full page, cross-linked). Register entries participate in the contradiction pass like meeting pages.
+
 ## [2.0.2] - 2026-08-08 (conversion fidelity)
 
 Conversion-fidelity release: two silent-loss failure modes closed, plus the audit that finds them. Nothing in a converted corpus is worth more than its faithfulness to the original — a conversion that looks well-formed while missing most of its document is worse than one that fails loudly.

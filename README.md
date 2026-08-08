@@ -468,7 +468,7 @@ brain-wiki/
 ├── .claude/
 │   ├── skills/                  # 3 corpus skills (corpus-convert, corpus-query, combined-query) (v2.0)
 │   └── commands/                # project-scope commands (/corpus-query, /combined-query, /corpus-convert, /wiki-query)
-├── skills/                       # 18 Claude Code skills (v2.0.2)
+├── skills/                       # 18 Claude Code skills (v2.1.0)
 │   ├── wiki/                    # orchestrator + references
 │   ├── wiki-ingest/             # source ingestion
 │   ├── wiki-query/              # answer questions from the vault
@@ -477,7 +477,7 @@ brain-wiki/
 │   ├── wiki-retrieve/           # hybrid retrieval (v1.7+, default-on since v2.0)
 │   ├── wiki-mode/               # methodology modes router (v1.8+)
 │   ├── wiki-fold/               # log rollup (DragonScale opt-in)
-│   ├── transcript-distill/      # ASR meeting transcripts → structured meeting pages (v2.0)
+│   ├── transcript-distill/      # ASR transcripts → meeting pages / Tier-1 registers (v2.1)
 │   ├── form-catalogue/          # spreadsheet/survey-form registry (v2.0)
 │   ├── glossary-seed/           # seed entity stubs from acronym tables (v2.0)
 │   ├── save/                    # /save: file conversations to wiki

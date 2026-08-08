@@ -1,6 +1,6 @@
 ---
 name: transcript-distill
-description: "Distill noisy ASR meeting transcripts (Plaud, Otter, Whisper) into structured wiki meeting pages: decisions, action items, topics, inferred speakers. Filters hallucinations deterministically before the LLM pass. Triggers on: distill transcript, distill this meeting, process meeting transcripts, transcript distill, ingest transcripts, meeting notes from transcript, batch distill."
+description: "Distill noisy ASR meeting transcripts (Plaud, Otter, Whisper) into structured wiki meeting pages or running meeting-note registers: decisions, action items, topics, inferred speakers. Filters hallucinations deterministically before the LLM pass. Triggers on: distill transcript, distill this meeting, process meeting transcripts, transcript distill, ingest transcripts, meeting notes from transcript, meeting note register, batch distill."
 ---
 
 # transcript-distill: Meeting Transcript Distillation
@@ -60,6 +60,54 @@ This skill writes wiki pages, so the shared v1.7+ rules apply exactly as in [`sk
 7. **Cross-reference** per wiki-ingest steps 4-8: entity pages for organizations/products/projects discussed, concept pages only for genuinely new ideas, index/hot/log updates. Meetings mention many entities in passing — create or update entity pages only for entities that were *discussed*, not merely named.
 
 8. **Check for contradictions** (wiki-ingest §Contradictions): meetings are where positions change. If a decision recorded here conflicts with an existing wiki page — a policy draft, a previous meeting's decision — add `> [!contradiction]` callouts on **both** pages. A meeting reversing an earlier decision is the single highest-value thing this skill can capture; also update the older page's decision status rather than leaving it stale.
+
+---
+
+## Register mode (v2.1)
+
+An alternative to one-page-per-meeting, for vaults where meetings are a
+**standing input stream** tied to the owner's areas of responsibility: a
+small fixed set of Tier-1 **register pages**, one per responsibility area
+plus one fallback, each accumulating compact entries newest-first. Weight
+follows from tier: registers are `tier: "1"` source pages, so their
+distilled decisions and action points rank ahead of raw transcript
+chunks in hybrid retrieval.
+
+**Setup** (once): create one register per responsibility area from
+[`_templates/meeting-register.md`](../../_templates/meeting-register.md),
+plus a fallback register ("Others") that also carries the shared
+conventions. Each register's Scope section holds the owner's **own
+responsibility list, verbatim** — supplied by the owner, never inferred.
+
+**Routing** (every transcript):
+
+- Classify by which register's responsibility list the meeting's
+  **substance** serves — never by meeting title, and never by themes
+  inferred from filenames. A meeting matching no list goes to the
+  fallback register; when torn between a responsibility register and
+  the fallback, prefer the responsibility register.
+- One meeting → exactly one register. If it genuinely spans two,
+  cross-reference with a wikilink instead of duplicating the entry.
+- The original transcript always also enters the corpus tier unchanged.
+  The register entry is a distillation, never a replacement.
+
+**Entries** (newest first under `## Meetings`): meeting name, participants,
+start date and duration (**mandatory** — from `recorded:` metadata and
+timestamps, `~` for estimates, `unknown` only when unrecoverable), agenda,
+decisions, action points (owner → action), notable items, source path.
+The template is embedded in `_templates/meeting-register.md`. Rules that
+carry over from the single-page workflow: speaker identity only from
+in-transcript evidence; unnamed meetings get a coined name marked as
+such; **Decisions records only what the transcript shows was decided** —
+positions voiced go under Notable. Entries are append-only; corrections
+edit in place with a `(corrected YYYY-MM-DD)` marker.
+
+**Coexistence:** register mode does not replace meeting pages. A
+load-bearing meeting can still get a full page via the single-transcript
+workflow — link it from its register entry. The contradiction pass
+(wiki-ingest §Contradictions) applies to register entries exactly as to
+meeting pages: a decision reversing an earlier entry updates the older
+entry's status.
 
 ---
 
