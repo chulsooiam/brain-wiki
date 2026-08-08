@@ -4,6 +4,10 @@ All notable changes to brain-wiki. Format: [Keep a Changelog](https://keepachang
 
 ## [Unreleased]
 
+## [2.2.0] - 2026-08-08 (transcript distillation fidelity)
+
+Three field lessons from distilling a 185-transcript corpus into meeting-note registers. All three are failure modes that produce output which *looks* correct — a plausible entry, a confident date, a participant list — while being wrong or incomplete. That is the kind of error a corpus never surfaces on its own, so each is now doctrine rather than a caveat.
+
 ### Added
 
 - **`transcript-distill` §Recording tails** — doctrine for the most common distortion in a personal transcript corpus: the recorder is left running, so a file's stated duration is audio length, not meeting length. Field evidence from a 185-transcript backfill: roughly one file in nine ran on past its meeting, several holding under 30 minutes of meeting inside 3+ hours of unrelated audio (personal conversation, broadcast television, music). The tail is now explicitly out of scope — not summarized, not mined for decisions, and never allowed to influence register routing — with a list of boundary signals for finding the real end, a requirement to state the true extent so a correctly short entry is not mistaken for a lazy one, and the corollary that duration is not a proxy for importance.
