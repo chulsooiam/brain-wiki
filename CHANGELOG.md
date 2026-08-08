@@ -4,6 +4,10 @@ All notable changes to brain-wiki. Format: [Keep a Changelog](https://keepachang
 
 ## [Unreleased]
 
+### Added
+
+- **`register-link.py --prose`** — extends the wikilink pass from register entries to entity/concept prose pages, densifying the middle of the graph. Prose-specific rules: one link per target per *page* (first mention wins), YAML frontmatter split off before matching so `related:`/`sources:` lists cannot be corrupted, heading lines protected, and frontmatter wikilinks do not spend the budget (the first body mention still gets its reader-visible link). All register-mode safeguards carry over: idempotency, fence/code protection, self-link prevention, longest-alias-wins. Field result: 161 links across 82 pages to 42 targets, zero on re-run, frontmatter verified intact on all 82. Nine prose-mode cases added to `tests/test_register_scripts.py`.
+
 ## [2.3.1] - 2026-08-08 (register-script hardening)
 
 ### Fixed

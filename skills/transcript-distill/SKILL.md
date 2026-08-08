@@ -148,6 +148,15 @@ layer accordingly:
   per action, each linking back to its source entry. **Checked boxes
   survive rebuilds** — ticking items off is the owner's triage, and the
   page is the standing to-do surface the meetings feed.
+- **Link the prose pages too** — `register-link.py --prose` extends the
+  pass to entity/concept pages themselves, densifying the middle of the
+  graph (which entities cluster around which concepts, not just which
+  meetings touched them). Prose mode differs from register mode where it
+  must: the budget is one link per target per *page* (first mention, like
+  a well-edited wiki article), YAML frontmatter is split off before any
+  matching so `related:`/`sources:` lists cannot be corrupted, heading
+  lines stay plain, and a frontmatter wikilink does not spend the budget
+  — the first body mention still gets its reader-visible link.
 - **Re-run both after appending entries**, and re-chunk/re-index the
   wiki tier after a large backfill — entries that never enter the index
   cannot surface in retrieval, however good they are.

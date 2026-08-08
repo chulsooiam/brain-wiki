@@ -119,6 +119,52 @@ def test_link(tmp):
           r2.stdout.startswith("0 links"), r2.stdout)
 
 
+PROSE = """---
+type: entity
+title: "Test Person"
+related: ["[[Bob Jones]]", "[[Data Platform (DP)]]"]
+---
+
+# Test Person
+
+## Overview with Bob Jones in heading
+
+Bob Jones works with Alice Smith on the Data Platform Toolkit. Later,
+Bob Jones appears again, and so does Alice Smith. The `Data Platform`
+in code stays. Test Person self-mention stays plain.
+
+## Sources
+
+- Data Platform roadmap notes
+"""
+
+
+def test_prose(tmp):
+    page = os.path.join(tmp, "wiki/entities/Test Person.md")
+    write(page, PROSE)
+    r1 = run("register-link.py", "--prose", page, cwd=tmp)
+    check("prose: runs clean", r1.returncode == 0, r1.stderr)
+    text = open(page, encoding="utf-8").read()
+    fm = text.split("---\n")[1]
+    check("prose: frontmatter untouched",
+          'related: ["[[Bob Jones]]", "[[Data Platform (DP)]]"]' in fm, fm)
+    check("prose: heading line untouched",
+          "## Overview with Bob Jones in heading" in text)
+    check("prose: frontmatter link does not spend budget (body Bob linked)",
+          "[[Bob Jones]] works with" in text, text[:400])
+    check("prose: one link per page (second Bob mention plain)",
+          text.count("[[Bob Jones]]") == 2,  # 1 frontmatter + 1 body
+          str(text.count("[[Bob Jones]]")))
+    check("prose: one link per page (second Alice mention plain)",
+          text.count("[[Alice Smith (CEO)|Alice Smith]]") == 1,
+          str(text.count("Alice Smith")))
+    check("prose: inline code protected", "`Data Platform`" in text)
+    check("prose: no self-link", "[[Test Person" not in text)
+    r2 = run("register-link.py", "--prose", page, cwd=tmp)
+    check("prose: idempotent (second run adds 0)",
+          r2.stdout.startswith("0 links"), r2.stdout)
+
+
 def test_actions(tmp):
     cfg = os.path.join(tmp, ".vault-meta/register-actions.json")
     if os.path.exists(cfg):
@@ -155,6 +201,8 @@ def main():
         make_vault(tmp)
         print("register-link.py")
         test_link(tmp)
+        print("register-link.py --prose")
+        test_prose(tmp)
         print("register-actions.py")
         test_actions(tmp)
     finally:

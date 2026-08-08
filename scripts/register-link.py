@@ -28,11 +28,18 @@ Modes:
                          (register-harness format), rewrite in place
   --pages FILE.md ...    link entry sections (### headings) of rendered
                          register pages in place
+  --prose FILE.md ...    link whole prose pages (entity/concept pages):
+                         one link per target per PAGE, first mention wins;
+                         YAML frontmatter and heading lines are never
+                         touched. A frontmatter `related:` wikilink does
+                         NOT spend the budget — the first body mention
+                         still gets its reader-visible link.
   --dry-run              report what would be linked, change nothing
 
 Usage:
   python3 scripts/register-link.py --entries backfill_state/entries.jsonl
   python3 scripts/register-link.py --pages "wiki/meetings/Meeting Notes - Others.md" --dry-run
+  python3 scripts/register-link.py --prose wiki/entities/*.md wiki/concepts/*.md --dry-run
 """
 import argparse
 import collections
@@ -96,10 +103,10 @@ def already_linked(text):
     return {m.group(1).strip() for m in re.finditer(r"\[\[([^\]|#]+)[^\]]*\]\]", text)}
 
 
-def link_text(text, aliases, linked, self_title, report):
+def link_text(text, aliases, linked, self_title, report, extra_protected=()):
     """Link first unlinked mention of each alias; return new text."""
     linked |= already_linked(text)
-    taken = protected_spans(text)
+    taken = protected_spans(text) + list(extra_protected)
     repl = []  # (start, end, replacement, title)
     for alias in sorted(aliases, key=len, reverse=True):
         title = aliases[alias]
@@ -161,10 +168,40 @@ def run_pages(paths, aliases, dry):
     return report, n
 
 
+FRONTMATTER = re.compile(r"^---\r?\n.*?\r?\n---\r?\n", re.S)
+
+
+def run_prose(paths, aliases, dry):
+    """Whole-page mode for entity/concept prose pages.
+
+    Budget is one link per target per PAGE. The YAML frontmatter block is
+    split off before any matching, so `related:`/`sources:` lists can
+    never be corrupted — and wikilinks inside frontmatter do not spend
+    the budget, so the first body mention still gets linked. Heading
+    lines stay plain prose-free zones.
+    """
+    report = collections.Counter()
+    n = 0
+    for p in paths:
+        text = open(p, encoding="utf-8").read()
+        self_title = os.path.basename(p)[:-3]
+        m = FRONTMATTER.match(text)
+        fm, body = (m.group(0), text[m.end():]) if m else ("", text)
+        headings = [h.span() for h in re.finditer(r"(?m)^#{1,6} .*$", body)]
+        n += 1
+        linked = set()
+        new_body = link_text(body, aliases, linked, self_title, report,
+                             extra_protected=headings)
+        if not dry and new_body != body:
+            open(p, "w", encoding="utf-8", newline="\n").write(fm + new_body)
+    return report, n
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--entries")
     ap.add_argument("--pages", nargs="*")
+    ap.add_argument("--prose", nargs="*")
     ap.add_argument("--dry-run", action="store_true")
     args = ap.parse_args()
     aliases = build_alias_map()
@@ -172,8 +209,10 @@ def main():
         report, n = run_entries(args.entries, aliases, args.dry_run)
     elif args.pages:
         report, n = run_pages(args.pages, aliases, args.dry_run)
+    elif args.prose:
+        report, n = run_prose(args.prose, aliases, args.dry_run)
     else:
-        ap.error("need --entries or --pages")
+        ap.error("need --entries, --pages or --prose")
     total = sum(report.values())
     print(f"{'DRY RUN — ' if args.dry_run else ''}{total} links across {n} entries; "
           f"{len(report)} distinct target pages")
