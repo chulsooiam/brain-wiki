@@ -17,13 +17,18 @@ Engine choices (measured on a ~400-document professional corpus, 2026-07/08):
 - EML/MSG: header-aware parsing, not layout conversion.
 - XLSX and friends are policy-routed (catalogue, don't convert) by the driver.
 """
+import glob
 import io
 import os
 import re
+import shutil
+import subprocess
 import threading
 
 MIN_CHARS = 200        # below this a whole-document conversion is "low text"
 LOWTEXT_SLIDE = 200    # per-slide threshold for the PPTX vision-layer flag
+RECALL_MIN = 0.97      # docling vocabulary recall below this triggers recovery
+RECALL_REPLACE = 0.70  # below this docling's structure isn't worth keeping
 
 
 def wp(path):
@@ -81,6 +86,102 @@ def _docling_convert(src):
     return res.document.export_to_markdown(image_mode=ImageRefMode.PLACEHOLDER)
 
 
+# --------------------------------------------------------------------------
+# Text-layer recovery (poppler)
+# --------------------------------------------------------------------------
+# docling's layout model classifies free-floating text boxes on design-heavy
+# PDFs (infographics, factsheets, strategy one-pagers) as images and drops
+# their text silently: the conversion looks well-formed, keeps its headings,
+# and is missing most of the document. Measured on this corpus, one 2 MB
+# strategy PDF converted to 730 bytes — 16.5% vocabulary recall — with no
+# flag raised, because it cleared MIN_CHARS.
+#
+# The PDF text layer is ground truth for born-digital files and poppler reads
+# it in a few hundred milliseconds, so every conversion is checked against it.
+# Recovery is structural, not OCR: it only restores text that is already in
+# the file. Absent poppler, conversion behaves exactly as before.
+_WORD = re.compile(r"[a-z]{4,}")
+_pt_cache = {}
+
+
+def _pdftotext_exe():
+    exe = _pt_cache.get("exe", "")
+    if exe == "":
+        exe = os.environ.get("CONVERT_PDFTOTEXT") or shutil.which("pdftotext")
+        if not exe and os.name == "nt":
+            found = glob.glob(os.path.join(
+                os.environ.get("LOCALAPPDATA", ""), "Microsoft", "WinGet",
+                "Packages", "oschwartz10612.Poppler*", "poppler-*",
+                "Library", "bin", "pdftotext.exe"))
+            exe = found[0] if found else None
+        _pt_cache["exe"] = exe
+    return exe
+
+
+def _pdf_text_layer(src):
+    """Raw text layer, or None when poppler is unavailable or fails."""
+    exe = _pdftotext_exe()
+    if not exe:
+        return None
+    try:
+        out = subprocess.run([exe, wp(src), "-"], capture_output=True,
+                             timeout=300)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if out.returncode != 0:
+        return None
+    return out.stdout.decode("utf-8", errors="replace")
+
+
+def _vocab(text):
+    return set(_WORD.findall(text.lower()))
+
+
+def _text_layer_blocks(raw):
+    """Blank-line-separated blocks, each rewrapped into one paragraph.
+
+    pdftotext hard-wraps at the layout's line breaks; joining within a block
+    keeps sentences intact so corpus chunking splits on meaning rather than
+    on where a text box happened to end.
+    """
+    blocks = []
+    for chunk in re.split(r"\n\s*\n", raw.replace("\f", "\n\n")):
+        para = " ".join(line.strip() for line in chunk.splitlines()
+                        if line.strip())
+        if para:
+            blocks.append(para)
+    return blocks
+
+
+def _recover_text_layer(text, raw):
+    """Return (markdown, mode) restoring what docling dropped.
+
+    Below RECALL_REPLACE docling has kept so little that its headings are not
+    worth the missing body, and the text layer replaces it wholesale.
+    Otherwise the structured conversion stands and only the blocks it missed
+    are appended, so tables and headings survive.
+    """
+    blocks = _text_layer_blocks(raw)
+    if not blocks:
+        return text, None
+    have = _vocab(text)
+    gt = _vocab(raw)
+    if len(gt & have) / len(gt) < RECALL_REPLACE:
+        return "\n\n".join(blocks), "replaced"
+    missing = []
+    for block in blocks:
+        words = _vocab(block)
+        if not words:
+            continue
+        gone = words - have
+        if len(gone) >= 3 and len(gone) / len(words) > 0.4:
+            missing.append(block)
+    if not missing:
+        return text, None
+    return (text.rstrip() + "\n\n## Text recovered from the PDF text layer\n\n"
+            + "\n\n".join(missing) + "\n"), "appended"
+
+
 def convert_pdf(src):
     text = _docling_convert(src)
     flags = []
@@ -90,6 +191,21 @@ def convert_pdf(src):
             "detail": f"{_visible_len(text)} visible chars — likely a scanned/"
                       "graphic PDF; queue for the OCR/vision finishing layer",
         })
+    raw = _pdf_text_layer(src)
+    gt = _vocab(raw) if raw else set()
+    if len(gt) >= 50:
+        recall = len(gt & _vocab(text)) / len(gt)
+        if recall < RECALL_MIN:
+            text, mode = _recover_text_layer(text, raw)
+            if mode:
+                new = len(gt & _vocab(text)) / len(gt)
+                flags.append({
+                    "type": "text-recovery",
+                    "detail": f"docling recall {recall:.1%} -> {new:.1%} "
+                              f"({mode} from the PDF text layer); layout-"
+                              "dependent structure in the recovered part is "
+                              "flattened to paragraphs",
+                })
     return text, flags
 
 
@@ -144,6 +260,71 @@ def convert_docx(src):
 # --------------------------------------------------------------------------
 # PPTX via python-pptx
 # --------------------------------------------------------------------------
+CHART_MAX_ROWS = 60    # beyond this a chart is a dataset, not a slide message
+
+
+def _num(v):
+    if v is None:
+        return ""
+    if isinstance(v, float) and v == int(v):
+        return str(int(v))
+    if isinstance(v, float):
+        return f"{v:g}"
+    return str(v)
+
+
+def _pptx_chart_md(chart, lines):
+    """Charts carry their plot data in the file; render it as a table.
+
+    A slide whose message is one chart used to convert to `<!-- chart -->`,
+    which reads as an empty slide and sends the deck to the vision layer for
+    numbers that were sitting in the XML all along. Extraction is exact —
+    prefer it over describing a picture of the same chart.
+    """
+    title = ""
+    try:
+        if chart.has_title:
+            title = chart.chart_title.text_frame.text.strip()
+    except Exception:
+        pass
+    lines.append("**Chart" + (f": {title}" if title else "") + "**")
+    lines.append("")
+
+    try:
+        cats = [str(c) for c in chart.plots[0].categories]
+    except Exception:
+        cats = []
+    series = []
+    try:
+        for s in chart.series:
+            series.append((str(s.name or "Series"), list(s.values)))
+    except Exception:
+        series = []
+
+    if not series:
+        lines.append("<!-- chart -->")
+        lines.append("")
+        return
+
+    rows = max(len(cats), max(len(v) for _, v in series))
+    if not cats:
+        cats = [str(i + 1) for i in range(rows)]
+    cut = rows > CHART_MAX_ROWS
+    rows = min(rows, CHART_MAX_ROWS)
+
+    lines.append("| Category | " + " | ".join(n.replace("|", "\\|")
+                                              for n, _ in series) + " |")
+    lines.append("|---|" + "---|" * len(series))
+    for i in range(rows):
+        cat = cats[i] if i < len(cats) else ""
+        vals = [_num(v[i]) if i < len(v) else "" for _, v in series]
+        lines.append("| " + cat.replace("|", "\\|") + " | "
+                     + " | ".join(vals) + " |")
+    if cut:
+        lines.append(f"| … | {' | '.join(['…'] * len(series))} |")
+    lines.append("")
+
+
 def _pptx_shape_md(shape, lines):
     from pptx.enum.shapes import MSO_SHAPE_TYPE
     try:
@@ -165,8 +346,7 @@ def _pptx_shape_md(shape, lines):
             lines.append("")
         return
     if getattr(shape, "has_chart", False):
-        lines.append("<!-- chart -->")
-        lines.append("")
+        _pptx_chart_md(shape.chart, lines)
         return
     if stype == MSO_SHAPE_TYPE.PICTURE:
         lines.append("<!-- image -->")
