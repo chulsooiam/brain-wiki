@@ -161,6 +161,32 @@ layer accordingly:
   wiki tier after a large backfill — entries that never enter the index
   cannot surface in retrieval, however good they are.
 
+**Content propagation — meetings update pages, on two clocks.** Links
+make a meeting *findable* from an entity page; they do not update what
+the page *says*. Left there, entity prose freezes at its last write
+while reality moves in the meetings. But meeting speech is weaker
+evidence than documents — positions, plans, sometimes ASR garble — so
+propagation is deliberately asymmetric, and it is judgment work for the
+distilling agent, not a script:
+
+- *Per transcript (sharp changes):* after writing the register entry,
+  check whether the meeting **changed something** a wiki page asserts —
+  a status, a decision, a role, a date, or a contradiction. If yes,
+  update that page **with meeting provenance** (link the register
+  entry inline, e.g. `paused per [[<register>#<entry>]]`); where it
+  conflicts with a document-sourced claim, add `> [!contradiction]`
+  callouts on both pages rather than overwriting. Routine mentions
+  (attended, discussed) propagate nothing — backlinks cover those.
+- *Periodic (slow drift):* every week or two, for pages whose backlinks
+  gained new register entries since the last pass, read those entries
+  and fold anything durable into the page under the same provenance
+  rules. This catches accumulation that no single meeting justified an
+  edit for.
+
+The asymmetry is the point: document-sourced facts are only ever
+*annotated* by meetings, never silently replaced — a reader can always
+tell document-fact from meeting-fact by the citation.
+
 ---
 
 ## Recording tails — cut them off
