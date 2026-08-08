@@ -4,6 +4,15 @@ All notable changes to brain-wiki. Format: [Keep a Changelog](https://keepachang
 
 ## [Unreleased]
 
+### Added
+
+- **`transcript-distill` §Recording tails** — doctrine for the most common distortion in a personal transcript corpus: the recorder is left running, so a file's stated duration is audio length, not meeting length. Field evidence from a 185-transcript backfill: roughly one file in nine ran on past its meeting, several holding under 30 minutes of meeting inside 3+ hours of unrelated audio (personal conversation, broadcast television, music). The tail is now explicitly out of scope — not summarized, not mined for decisions, and never allowed to influence register routing — with a list of boundary signals for finding the real end, a requirement to state the true extent so a correctly short entry is not mistaken for a lazy one, and the corollary that duration is not a proxy for importance.
+- **Known-alias exception** to evidence-only speaker attribution (`transcript-distill` step 5): ASR renders one person's name differently in every recording, worst for names outside the decoder's dominant language, which causes *under*-attribution — the vault owner listed as `Speaker N (unidentified)` in their own meetings. A vault may keep an alias list on a person's entity page; matching a rendering to its canonical person is then evidence-backed rather than a guess. Constrained: aliases license recognition, not attribution, and collisions with other real people's names must be flagged in the list and resolved from context every time.
+
+### Fixed
+
+- **Date-audit guidance was wrong.** Step 2 said to "always trust the `recorded:` metadata" on a filename/metadata mismatch. On some exporters — Plaud among them — `recorded:` is the *export* timestamp, so a batch exported on one day all carries that day's date, and following the old rule silently misdates the entire batch. Guidance now requires establishing the date from whichever basis the corpus has shown reliable, corroborating from in-transcript evidence, and recording which basis was used; a harness-supplied corrected date outranks anything in the file.
+
 ## [2.1.0] - 2026-08-08 (meeting-note registers)
 
 Meetings promoted to a first-class input stream. For professional vaults, decisions and action points live in meetings more than in documents — but per-meeting pages scatter them and raw transcripts bury them below the wiki tier. Register mode concentrates them on a handful of Tier-1 pages routed by the owner's actual responsibilities.

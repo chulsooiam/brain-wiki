@@ -40,7 +40,7 @@ This skill writes wiki pages, so the shared v1.7+ rules apply exactly as in [`sk
    ```bash
    python3 scripts/transcript-preprocess.py check-dates .raw/transcripts/FILE.md
    ```
-   Exit 1 means mismatch — **always trust the `recorded:` metadata**, and record the true date in the meeting page frontmatter.
+   Exit 1 means mismatch. **Do not resolve it by trusting `recorded:` blindly** — on some exporters (Plaud among them) `recorded:` is the *export* timestamp, not the recording date, so a whole batch exported on one day carries that day's date. Establish the true date from whichever source the corpus has shown to be reliable, corroborated where possible by in-transcript evidence (a stated date, a weekday, a referenced deadline), and **record which basis you used** alongside the date. Where a harness or queue supplies an already-corrected date, that value wins over anything in the file. Then record the true date in the meeting page frontmatter.
 
 3. **Clean**:
    ```bash
@@ -48,12 +48,19 @@ This skill writes wiki pages, so the shared v1.7+ rules apply exactly as in [`sk
    ```
    Merges consecutive same-speaker fragments into readable turns and marks hallucination-suspect segments `[flagged: phrase|repeat|empty]`. Add `--drop-flagged` only after skimming what got flagged — the filter is conservative by design, but a real sentence can contain a flagged phrase. Domain-specific hallucinations go in a phrases file (`--phrases`), one per line.
 
-4. **Read the cleaned transcript** completely. For very long meetings (>2h), read in order without skimming the middle — decisions cluster at topic boundaries and meeting ends.
+4. **Read the cleaned transcript** completely. For very long meetings (>2h), read in order without skimming the middle — decisions cluster at topic boundaries and meeting ends. Then **find where the meeting actually ends** and ignore everything after it — see §Recording tails below. Stated duration is audio length, not meeting length.
 
 > [!note] Undiarized transcripts
 > Some exports carry no speaker labels at all (`[00:02 - 00:37] text…`). The preprocessor handles these — `stats` reports them under `unlabeled_segments`, and `clean` breaks the wall of text into timestamp-addressable paragraphs (merge is capped at ~1,500 chars per paragraph). Skip step 5 for these files; the Participants table just lists "undiarized recording".
 
 5. **Infer speaker identities — with evidence only.** The transcript says `Speaker 1`. You may infer a name **only from in-transcript evidence** (self-introduction, being addressed by name, role references). Record inferences in the page's Participants table with the evidence, formatted as `Speaker 1 — likely NAME (inferred: addressed as "NAME" at 00:14:32)`. If there is no evidence, leave the label anonymous. **Never guess from context outside the transcript** (calendar, prior pages) without marking the lower confidence explicitly.
+
+   > [!tip] Known-alias exception
+   > ASR mangles the same person's name differently in every recording — most severely for names outside the decoder's dominant language, where one person can appear under five spellings across a corpus. That produces *under*-attribution: an agent correctly refusing to guess leaves the vault owner themselves listed as `Speaker N (unidentified)` in their own meetings.
+   >
+   > A vault may therefore maintain an **alias list** for its recurring people — canonical name plus the ASR renderings observed for them — on the person's entity page. Where such a list exists, matching a rendering to its canonical person is evidence-backed, not a guess: record it as `Speaker 3 — NAME (ASR renders "MANGLED")`.
+   >
+   > Two constraints. **Aliases license recognition, not attribution** — the transcript must still point at that person (role, topic, being addressed); a bare name in a participant list is not enough. And **flag collisions in the list itself**: when an alias is also a different real person's actual name, that ambiguity has to be resolved from context every time, never defaulted.
 
 6. **Write the meeting page** using [`templates/meeting-template.md`](templates/meeting-template.md). Route via `wiki-mode.py route source`, acquire the lock, write, release. The page is a *distillation* — decisions, action items, topics, notable quotes with timestamps — not a shortened transcript. Target 60-150 lines regardless of meeting length; link the raw file for anything deeper.
 
@@ -92,8 +99,10 @@ responsibility list, verbatim** — supplied by the owner, never inferred.
   The register entry is a distillation, never a replacement.
 
 **Entries** (newest first under `## Meetings`): meeting name, participants,
-start date and duration (**mandatory** — from `recorded:` metadata and
-timestamps, `~` for estimates, `unknown` only when unrecoverable), agenda,
+start date and duration (**mandatory** — date per the step-2 audit, never
+straight from `recorded:`; `~` for estimates, `unknown` only when
+unrecoverable; note where the meeting ends if the recording runs past it
+per §Recording tails), agenda,
 decisions, action points (owner → action), notable items, source path.
 The template is embedded in `_templates/meeting-register.md`. Rules that
 carry over from the single-page workflow: speaker identity only from
@@ -108,6 +117,47 @@ workflow — link it from its register entry. The contradiction pass
 (wiki-ingest §Contradictions) applies to register entries exactly as to
 meeting pages: a decision reversing an earlier entry updates the older
 entry's status.
+
+---
+
+## Recording tails — cut them off
+
+People forget to stop the recorder. This is the single most common
+distortion in a personal transcript corpus, and it is not a rare edge
+case: in one 185-transcript backfill, roughly one file in nine ran on past
+its meeting, several holding **under 30 minutes of meeting inside three
+or more hours of audio**.
+
+What fills the tail is unrelated audio — the owner's personal
+conversation, television and radio, music, a commute, ambient room noise,
+occasionally an entirely different later event. Sometimes the front is
+affected too: recordings that begin mid-sentence, or carry pre-meeting
+small talk.
+
+**Distil the meeting only.** Everything outside it is out of scope: do not
+summarize it, do not mine it for decisions or action items, do not let it
+influence classification or routing, and never let it pull the page or
+register entry off-topic. It is not thin content to be stretched — it is
+not content.
+
+Find the real boundary from the transcript itself:
+
+- participants say goodbye, thank each other, or close the call;
+- the topic collapses into small talk and never returns;
+- the language or subject matter switches wholesale;
+- speaker labels stop tracking the meeting's participants;
+- long unbroken monologue where a discussion had been (broadcast audio).
+
+Then **state the real extent** in the page's provenance note or the
+register entry's Notable line — e.g. `~29 min of meeting content in a
+3h28m file; the remainder is unrelated audio (recorder left running)`.
+Without that line a correctly short entry is indistinguishable from a lazy
+one, and the stated duration silently misleads every later reader.
+
+This has a second consequence worth internalizing: **duration is not a
+proxy for importance.** Do not allocate reading effort, entry length, or
+significance by a file's stated length — a 20-minute standup can carry
+more decisions than a 4-hour recording that is mostly a television.
 
 ---
 
@@ -139,7 +189,9 @@ Trigger: "distill all transcripts", a folder path, or 3+ files.
 
 - Do not ingest a raw transcript with `wiki-ingest` as if it were an article. The result is a 40 KB "summary" nobody reads.
 - Do not present an inferred speaker name as fact — anywhere, ever. The inference table with evidence is the only place names attach to speaker labels.
-- Do not trust filename dates. `check-dates` exists because they were wrong in practice.
+- Do not trust filename dates. `check-dates` exists because they were wrong in practice. Do not reflexively trust `recorded:` either — on some exporters it is the export timestamp.
+- Do not summarize the recording's tail. Audio after the meeting ends is not content, however many hours of it there are, and it must never affect routing.
+- Do not treat stated duration as meeting length, or as a proxy for importance.
 - Do not delete flagged segments from `.raw/` sources. Immutability rule.
 - Do not quote long verbatim passages from raw-ASR transcripts — distill.
 
