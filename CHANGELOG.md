@@ -4,6 +4,12 @@ All notable changes to brain-wiki. Format: [Keep a Changelog](https://keepachang
 
 ## [Unreleased]
 
+### Added
+
+- **Registers as a first-class layer** (`transcript-distill` §Registers are a first-class layer + template note): meeting-note registers move out of `wiki/sources/` into their own `wiki/meetings/` category with an index. Field lesson: registers filed among a hundred source pages are functionally invisible, and unlinked entries contribute nothing to the graph — no entity page knows its own meetings.
+- **`scripts/register-link.py`** — deterministic wikilink pass over register entries. Alias map auto-derived from entity/concept page titles (parenthetical acronyms yield long-name and acronym aliases), curated additions/exclusions in `.vault-meta/register-aliases.json`; links first mention per entry, longest alias first, whole-word, never inside existing links or code spans, one link per target page per entry. Precision over recall by design — ambiguous short names and ASR-mangled person aliases stay out of the map. Field result: 788 links across 185 entries to 34 pages, turning every entity page's backlinks into its meeting history.
+- **`scripts/register-actions.py`** — regenerates a single `Action Points.md` from the rendered registers: every action owned by the configured owner (`.vault-meta/register-actions.json`), newest first, grouped by register, checkboxed, each linking back to its source entry. Checked boxes survive rebuilds, so ticking off items is the owner's triage and the page is the standing to-do surface the meetings feed.
+
 ## [2.2.0] - 2026-08-08 (transcript distillation fidelity)
 
 Three field lessons from distilling a 185-transcript corpus into meeting-note registers. All three are failure modes that produce output which *looks* correct — a plausible entry, a confident date, a participant list — while being wrong or incomplete. That is the kind of error a corpus never surfaces on its own, so each is now doctrine rather than a caveat.

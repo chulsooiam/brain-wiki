@@ -118,6 +118,40 @@ workflow — link it from its register entry. The contradiction pass
 meeting pages: a decision reversing an earlier entry updates the older
 entry's status.
 
+### Registers are a first-class layer, not sources (v2.3)
+
+Registers filed under `wiki/sources/` among a hundred document pages are
+functionally invisible, and unlinked entries contribute nothing to the
+graph: no entity page knows its own meetings, and backlinks stay empty.
+If meetings are the owner's standing input stream, treat the register
+layer accordingly:
+
+- **Own category.** Registers live in `wiki/meetings/` (with an
+  `_index.md`), listed prominently from the master index — not inside
+  `sources/`. They keep `tier: "1"`; location changes, weight doesn't.
+- **Interlink entries** — `scripts/register-link.py`. Deterministic
+  wikilink pass over register entries: builds an alias map from every
+  entity/concept page title (parenthetical acronyms yield `Long Name`
+  and `ACRO` aliases automatically; curated additions and exclusions in
+  `.vault-meta/register-aliases.json`), then links the **first mention
+  per entry**, longest alias first, whole-word, never inside existing
+  links or code spans, at most one link per target page per entry.
+  Precision over recall: a wrong link is worse than a missing one — keep
+  ambiguous short names (and ASR-mangled person aliases) out of the map.
+  The payoff is the graph inverting for free: every entity page's
+  backlinks become its meeting history, in date order.
+- **Roll up the owner's actions** — `scripts/register-actions.py`.
+  Parses the *rendered* registers (so it works for entries added by any
+  route), extracts every action whose owner side names the configured
+  owner (`.vault-meta/register-actions.json`), and regenerates a single
+  `Action Points.md`: newest first, grouped by register, one checkbox
+  per action, each linking back to its source entry. **Checked boxes
+  survive rebuilds** — ticking items off is the owner's triage, and the
+  page is the standing to-do surface the meetings feed.
+- **Re-run both after appending entries**, and re-chunk/re-index the
+  wiki tier after a large backfill — entries that never enter the index
+  cannot surface in retrieval, however good they are.
+
 ---
 
 ## Recording tails — cut them off

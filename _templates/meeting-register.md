@@ -20,6 +20,11 @@ meeting-note registers. Meetings are routed to this page when they
 substantially concern the responsibilities below — the responsibility
 list is the authoritative routing basis, **not** meeting titles.
 
+> Registers live in `wiki/meetings/` as their own category (see
+> transcript-distill §Registers are a first-class layer). After appending
+> an entry, run `scripts/register-link.py --pages` on this page and
+> `scripts/register-actions.py` to refresh the Action Points rollup.
+
 ## Scope — work and key responsibilities
 
 <!-- The register owner's OWN responsibility list, verbatim. Do not
