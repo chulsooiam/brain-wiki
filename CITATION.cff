@@ -8,8 +8,8 @@ authors:
 repository-code: 'https://github.com/chulsooiam/brain-wiki'
 url: 'https://github.com/chulsooiam/brain-wiki'
 license: MIT
-version: 2.0.0
-date-released: '2026-08-07'
+version: 2.0.2
+date-released: '2026-08-08'
 keywords:
   - obsidian
   - claude-code

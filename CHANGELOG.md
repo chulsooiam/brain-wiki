@@ -4,6 +4,10 @@ All notable changes to brain-wiki. Format: [Keep a Changelog](https://keepachang
 
 ## [Unreleased]
 
+## [2.0.2] - 2026-08-08 (conversion fidelity)
+
+Conversion-fidelity release: two silent-loss failure modes closed, plus the audit that finds them. Nothing in a converted corpus is worth more than its faithfulness to the original — a conversion that looks well-formed while missing most of its document is worse than one that fails loudly.
+
 ### Added
 
 - **`scripts/conversion-audit.py`** — corpus-wide conversion fidelity sweep: vocabulary recall of every converted PDF against `pdftotext` ground truth, flagging conversions below a threshold (default 97%). Motivated by a field incident: docling silently dropped whole pages (exit 0, no warning) from a 190-page PDF; a corpus audit then found 18/79 conversions under 97% recall, including one at 37.5% that a fresh reconversion fully recovered. The per-file QA gate catches this for reviewed documents; the sweep catches it retroactively at corpus scale.

@@ -468,7 +468,7 @@ brain-wiki/
 ├── .claude/
 │   ├── skills/                  # 3 corpus skills (corpus-convert, corpus-query, combined-query) (v2.0)
 │   └── commands/                # project-scope commands (/corpus-query, /combined-query, /corpus-convert, /wiki-query)
-├── skills/                       # 18 Claude Code skills (v2.0.0)
+├── skills/                       # 18 Claude Code skills (v2.0.2)
 │   ├── wiki/                    # orchestrator + references
 │   ├── wiki-ingest/             # source ingestion
 │   ├── wiki-query/              # answer questions from the vault
@@ -656,7 +656,7 @@ PRs welcome. Read these first:
 - [`CONTRIBUTING.md`](CONTRIBUTING.md): workflow, six-cut self-review checklist, commit conventions, hermetic test requirements
 - [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md): Contributor Covenant v2.1
 - [`SECURITY.md`](SECURITY.md): responsible security disclosure policy
-- [`CHANGELOG.md`](CHANGELOG.md): version history (latest: v2.0.0)
+- [`CHANGELOG.md`](CHANGELOG.md): version history (latest: v2.0.2)
 
 Issue + PR templates available under [`.github/`](.github/). CI runs `make test` + SKILL.md frontmatter validation + plugin manifest JSON validity on every PR. The pre-commit verifier agent at [`agents/verifier.md`](agents/verifier.md) applies the six-cut + agent kernel to staged diffs.
 
