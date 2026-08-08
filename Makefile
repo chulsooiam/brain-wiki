@@ -4,7 +4,7 @@
 .PHONY: test test-address test-tiling test-boundary test-bm25 test-retrieve \
         test-lock test-concurrent test-mode test-contextual test-transcript \
         test-depth test-forms test-lineage test-glossary test-queue \
-        test-corpus test-convert dist \
+        test-corpus test-convert test-register dist \
         setup-dragonscale setup-retrieve setup-mode \
         clean-test-state help
 
@@ -31,7 +31,7 @@ help:
 	@echo "  make setup-mode       Run bin/setup-mode.sh to pick a methodology mode (opt-in v1.8)"
 	@echo "  make clean-test-state Remove runtime lockfiles and tiling/embed caches"
 
-test: test-address test-tiling test-boundary test-bm25 test-retrieve test-lock test-concurrent test-mode test-contextual test-transcript test-depth test-forms test-lineage test-glossary test-queue test-corpus test-convert
+test: test-address test-tiling test-boundary test-bm25 test-retrieve test-lock test-concurrent test-mode test-contextual test-transcript test-depth test-forms test-lineage test-glossary test-queue test-corpus test-convert test-register
 	@echo ""
 	@echo "All tests passed."
 
@@ -94,6 +94,10 @@ test-glossary:
 test-queue:
 	@echo "=== test_work_queue.py ==="
 	@python3 tests/test_work_queue.py
+
+test-register:
+	@echo "=== test_register_scripts.py ==="
+	@python3 tests/test_register_scripts.py
 
 test-corpus:
 	@python3 tests/test_corpus_layer.py

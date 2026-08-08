@@ -4,6 +4,19 @@ All notable changes to brain-wiki. Format: [Keep a Changelog](https://keepachang
 
 ## [Unreleased]
 
+### Fixed
+
+Adversarial hardening pass over the v2.3.0 register scripts — three bugs found by attacking them with degenerate vaults, all of a kind CI could not catch because the scripts had no tests:
+
+- **`register-link.py` was not idempotent.** Pre-existing `[[links]]` did not count toward the one-link-per-target-per-entry budget, so every re-run (which the register workflow prescribes after each append) linked the next mention — entries degraded a little more each pass. Existing links now seed the per-entry budget; re-running on an already-linked corpus adds exactly zero links.
+- **`register-link.py` could link inside code fences.** Page mode split entries on `###` headings before fence detection, so a heading quoted inside a fence (the entry template on a conventions page) split the fence in two and exposed its contents to linking. Entry boundaries are now computed only from headings outside fences.
+- **`register-actions.py` silently dropped entries whose heading used a hyphen instead of an em-dash**, and rebuilt source anchors with a hardcoded em-dash that would not resolve against such headings. The heading pattern now accepts em-dash, en-dash and hyphen, and anchors reuse the heading text verbatim.
+- **Plugin manifests left behind by two releases**: `.claude-plugin/plugin.json` and `marketplace.json` still declared 2.1.0 through v2.2.0 and v2.3.0.
+
+### Added
+
+- **`tests/test_register_scripts.py`** (wired into `make test` / CI): codifies the adversarial findings — idempotency, fence protection, pre-linked budget seeding, self-link prevention, longest-alias-wins, dash tolerance, verbatim anchors, tick survival, loud unconfigured-owner error.
+
 ## [2.3.0] - 2026-08-08 (registers as a first-class layer)
 
 Meeting-note registers promoted from "pages in sources/" to the vault's working layer: their own category, entries wired into the wiki graph, and a standing action-points rollup. The driving insight, from the register owner: the registers are the core of the work — the vault exists to support the action points discussed in meetings and to draw insights from them, and a register nobody can find or that links to nothing does neither.

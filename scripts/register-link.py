@@ -79,9 +79,9 @@ def build_alias_map():
 
 
 def protected_spans(text):
-    """Ranges already inside [[...]] or `...` — never link there."""
+    """Ranges inside [[...]], `code`, or ```fences``` — never link there."""
     spans = []
-    for m in re.finditer(r"\[\[.*?\]\]|`[^`]*`", text):
+    for m in re.finditer(r"```.*?```|\[\[.*?\]\]|`[^`]*`", text, re.S):
         spans.append(m.span())
     return spans
 
@@ -91,8 +91,14 @@ def overlaps(span, spans):
     return any(a < e and s < b for s, e in spans)
 
 
+def already_linked(text):
+    """Titles already wikilinked in this text — never link them again."""
+    return {m.group(1).strip() for m in re.finditer(r"\[\[([^\]|#]+)[^\]]*\]\]", text)}
+
+
 def link_text(text, aliases, linked, self_title, report):
     """Link first unlinked mention of each alias; return new text."""
+    linked |= already_linked(text)
     taken = protected_spans(text)
     repl = []  # (start, end, replacement, title)
     for alias in sorted(aliases, key=len, reverse=True):
@@ -135,13 +141,21 @@ def run_pages(paths, aliases, dry):
     for p in paths:
         text = open(p, encoding="utf-8").read()
         self_title = os.path.basename(p)[:-3]
-        # link each entry section independently (one link per page per entry)
-        parts = re.split(r"(?m)(^### .*$)", text)
-        for i in range(2, len(parts), 2):   # bodies following ### headings
+        # entry boundaries are ### headings OUTSIDE code fences -- a fenced
+        # heading (e.g. the entry template quoted on a conventions page)
+        # must neither start a section nor break the fence in two
+        fences = [m.span() for m in re.finditer(r"```.*?```", text, re.S)]
+        heads = [m for m in re.finditer(r"(?m)^### .*$", text)
+                 if not overlaps(m.span(), fences)]
+        bounds = [(h.end(), heads[i + 1].start() if i + 1 < len(heads)
+                   else len(text)) for i, h in enumerate(heads)]
+        out = text
+        for start, end in reversed(bounds):   # replace back-to-front so
+            n += 1                            # earlier offsets stay valid
             linked = set()
-            n += 1
-            parts[i] = link_text(parts[i], aliases, linked, self_title, report)
-        out = "".join(parts)
+            seg = link_text(text[start:end], aliases, linked, self_title,
+                            report)
+            out = out[:start] + seg + out[end:]
         if not dry and out != text:
             open(p, "w", encoding="utf-8", newline="\n").write(out)
     return report, n

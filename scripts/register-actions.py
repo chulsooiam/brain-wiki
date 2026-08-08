@@ -36,7 +36,7 @@ OWNER_PAGE = None      # entity page title of the owner
 OWNER_NAMES = []       # names that identify the owner on an action's owner side
 REGISTERS = None       # None -> auto-discover wiki/meetings/*.md
 
-ENTRY = re.compile(r"(?m)^### (?P<date>\d{4}-\d{2}-\d{2}) — (?P<name>.+)$")
+ENTRY = re.compile(r"(?m)^### (?P<head>(?P<date>\d{4}-\d{2}-\d{2}) [—–-] (?P<name>.+?))\s*$")
 ACTIONS_LINE = re.compile(r"(?m)^- \*\*Action points:\*\* (?P<body>.+)$")
 
 
@@ -94,6 +94,7 @@ def collect():
                         "register": reg,
                         "date": m.group("date"),
                         "meeting": m.group("name").strip(),
+                        "head": m.group("head"),
                         "action": action.strip(),
                     })
     return items
@@ -142,7 +143,7 @@ def render(items, ticked):
         lines.append("")
         for i in sorted(regitems, key=lambda x: x["date"], reverse=True):
             box = "x" if (i["date"], i["action"]) in ticked else " "
-            anchor = f"{i['register']}#{i['date']} — {i['meeting']}"
+            anchor = f"{i['register']}#{i['head']}"
             lines.append(
                 f"- [{box}] **{i['date']}** — {i['action']} _([[{anchor}|source]])_")
         lines.append("")
