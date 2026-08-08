@@ -12,7 +12,12 @@ All notable changes to brain-wiki. Format: [Keep a Changelog](https://keepachang
 ### Changed
 
 - **CLAUDE.md conversion doctrine hardened**: conversions route through `scripts/convert.py` (never a bare `docling` from PATH, which can resolve to an unrelated environment's copy) and output into the curation-tier folder under `.sources/` (a generic `Ingested/` folder would mis-stamp the corpus chunks' `tier` and forfeit the ranking bonus). Docling's silent page-drop failure mode is now documented inline with the instruction to never skip the QA gate for multi-page PDFs.
+- **PPTX charts are extracted, not discarded** — `convert_formats.py` rendered every chart as `<!-- chart -->`, throwing away categories and series values that sit in the presentation XML. Charts now convert to a Markdown table, so a slide whose message is one chart carries its numbers instead of reading as an empty slide bound for a vision pass. Exact extraction; no image interpretation involved.
 - **`scripts/corpus-retrieve.py` per-document diversification**: final results cap at 2 chunks per document (backfilling when the corpus is narrow), so a single long PDF can no longer monopolize the top-k; rerank over-fetch raised accordingly. Regression tests in `tests/test_corpus_layer.py`.
+
+### Fixed
+
+- **Silent text-box loss on design-heavy PDFs** — a second docling failure mode, distinct from the page drops that motivated `conversion-audit.py` and *not* fixable by reconversion: the layout model classifies free-floating text boxes on infographics, factsheets and strategy one-pagers as images and drops them. The output keeps its headings, clears `MIN_CHARS`, raises no flag, and is missing most of the document — a 2 MB strategy PDF converted to 730 bytes at 16.5% vocabulary recall. `convert_pdf` now checks every conversion against the poppler text layer: below 97% recall the missing blocks are appended, and below 70% (docling kept so little that its structure is not worth the missing body) the text layer replaces the conversion. Recovery is structural — it restores text already present in the file, never OCR — and is skipped silently when poppler is unavailable, so behaviour is unchanged without it. Each recovery raises a `text-recovery` flag reporting the before/after recall. Measured over 18 flagged PDFs in a UN-agency corpus: 11 improved (16.5%→97.5%, 58.9%→100%, 81.3%→92.9% the largest), 7 unchanged where the loss was diffuse hyphenation and running heads rather than dropped blocks.
 
 ## [2.0.0] - 2026-08-07 (the professional-corpus release)
 

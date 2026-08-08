@@ -110,6 +110,82 @@ def test_numbering_bulleted_lines_counted():
     assert_eq("bulleted sub-number still checked", 1, len(flags))
 
 
+# ─── PDF text-layer recovery ─────────────────────────────────────────────────
+def test_text_layer_blocks_rewrap():
+    raw = "First line\nwrapped here\n\nSecond block\f Third after page break\n"
+    blocks = fmts._text_layer_blocks(raw)
+    assert_eq("blank line and form feed split blocks", 3, len(blocks))
+    assert_eq("wrapped lines rejoin into one paragraph",
+              "First line wrapped here", blocks[0])
+
+
+def test_recovery_replaces_when_docling_kept_almost_nothing():
+    # The infographic case: docling emits a heading and drops every text box.
+    raw = ("Heading\n\nResilience means efficient operations preparing for "
+           "increasing migrant numbers.\n\nGovernance means advising partners "
+           "on capacities through improved data.\n")
+    out, mode = fmts._recover_text_layer("## Heading\n", raw)
+    assert_eq("wholesale replacement below the replace threshold",
+              "replaced", mode)
+    assert_true("replacement carries the dropped text",
+                "Governance means advising partners" in out, hint=out)
+
+
+def test_recovery_appends_only_missing_blocks():
+    kept = ("## Scope\n\nResilience means efficient operations preparing for "
+            "increasing migrant numbers across every regional office and "
+            "partner mission worldwide.\n")
+    raw = kept.replace("## ", "") + "\n\nGovernance advises partners.\n"
+    out, mode = fmts._recover_text_layer(kept, raw)
+    assert_eq("partial loss appends rather than replaces", "appended", mode)
+    assert_true("structured conversion survives", out.startswith("## Scope"),
+                hint=out[:40])
+    assert_eq("already-present block is not duplicated", 1,
+              out.count("Resilience means efficient operations"))
+
+
+def test_recovery_noop_when_nothing_missing():
+    text = "## Scope\n\nResilience means efficient operations.\n"
+    out, mode = fmts._recover_text_layer(text, "Resilience means efficient "
+                                               "operations.\n")
+    assert_true("complete conversion is left alone", mode is None)
+    assert_eq("text returned unchanged", text, out)
+
+
+# ─── PPTX chart extraction ───────────────────────────────────────────────────
+class _FakeSeries:
+    def __init__(self, name, values):
+        self.name, self.values = name, values
+
+
+class _FakeChart:
+    """Duck-types the python-pptx chart surface _pptx_chart_md reads."""
+
+    def __init__(self, title, categories, series):
+        self.has_title = title is not None
+        self._title = title
+        self.plots = [type("P", (), {"categories": categories})()]
+        self.series = [_FakeSeries(n, v) for n, v in series]
+
+    @property
+    def chart_title(self):
+        return type("T", (), {
+            "text_frame": type("F", (), {"text": self._title})()})()
+
+
+def test_pptx_chart_extracted_as_table():
+    lines = []
+    fmts._pptx_chart_md(_FakeChart("Displaced persons", ["2023", "2024"],
+                                   [("IDPs", [1200.0, 1500.5])]), lines)
+    md = "\n".join(lines)
+    assert_true("chart title is kept", "**Chart: Displaced persons**" in md,
+                hint=md)
+    assert_true("categories and series become a table row",
+                "| 2023 | 1200 |" in md, hint=md)
+    assert_true("non-integer values keep their precision",
+                "1500.5" in md, hint=md)
+
+
 # ─── EML (stdlib) ────────────────────────────────────────────────────────────
 EML_SAMPLE = b"""From: Alice Example <alice@example.org>
 To: Bob Example <bob@example.org>
@@ -304,6 +380,11 @@ def main():
     test_numbering_consistent_text_not_flagged()
     test_numbering_fabricated_text_flagged()
     test_numbering_bulleted_lines_counted()
+    test_text_layer_blocks_rewrap()
+    test_recovery_replaces_when_docling_kept_almost_nothing()
+    test_recovery_appends_only_missing_blocks()
+    test_recovery_noop_when_nothing_missing()
+    test_pptx_chart_extracted_as_table()
     test_eml_frontmatter_body_and_attachments()
     test_eml_utf8_body_without_declared_charset()
     test_pptx_slide_anchors_and_notes()
