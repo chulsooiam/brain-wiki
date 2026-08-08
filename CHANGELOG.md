@@ -4,6 +4,8 @@ All notable changes to brain-wiki. Format: [Keep a Changelog](https://keepachang
 
 ## [Unreleased]
 
+## [2.3.1] - 2026-08-08 (register-script hardening)
+
 ### Fixed
 
 Adversarial hardening pass over the v2.3.0 register scripts — three bugs found by attacking them with degenerate vaults, all of a kind CI could not catch because the scripts had no tests:
