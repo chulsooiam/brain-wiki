@@ -4,6 +4,10 @@ All notable changes to brain-wiki. Format: [Keep a Changelog](https://keepachang
 
 ## [Unreleased]
 
+## [2.3.0] - 2026-08-08 (registers as a first-class layer)
+
+Meeting-note registers promoted from "pages in sources/" to the vault's working layer: their own category, entries wired into the wiki graph, and a standing action-points rollup. The driving insight, from the register owner: the registers are the core of the work — the vault exists to support the action points discussed in meetings and to draw insights from them, and a register nobody can find or that links to nothing does neither.
+
 ### Added
 
 - **Registers as a first-class layer** (`transcript-distill` §Registers are a first-class layer + template note): meeting-note registers move out of `wiki/sources/` into their own `wiki/meetings/` category with an index. Field lesson: registers filed among a hundred source pages are functionally invisible, and unlinked entries contribute nothing to the graph — no entity page knows its own meetings.

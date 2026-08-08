@@ -468,7 +468,7 @@ brain-wiki/
 ├── .claude/
 │   ├── skills/                  # 3 corpus skills (corpus-convert, corpus-query, combined-query) (v2.0)
 │   └── commands/                # project-scope commands (/corpus-query, /combined-query, /corpus-convert, /wiki-query)
-├── skills/                       # 18 Claude Code skills (v2.2.0)
+├── skills/                       # 18 Claude Code skills (v2.3.0)
 │   ├── wiki/                    # orchestrator + references
 │   ├── wiki-ingest/             # source ingestion
 │   ├── wiki-query/              # answer questions from the vault
