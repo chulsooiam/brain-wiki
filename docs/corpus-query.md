@@ -58,7 +58,8 @@ source tree ── scripts/convert.py ──▶ .sources/  (Markdown mirror + QA
 - **Tier metadata**: each chunk is stamped with the curation tier of its
   top-level `.sources/` folder — "…Tier N…" → `N`, anything else → its
   slugified name; `.vault-meta/corpus-tiers.json` overrides the mapping and
-  the per-tier ranking bonus (`{"map": {...}, "bonus": {...}}`).
+  the per-tier ranking bonus (`{"map": {...}, "bonus": {...}}`). Manage it
+  with `corpus-tier.py` rather than by hand — see *Deprioritized tiers*.
 - **Chunking parity**: `corpus-index.py` imports the wiki tier's own
   `chunk_body()` so both tiers split text identically. Two corpus-only
   guards exist because converted documents are structurally unlike
@@ -72,6 +73,57 @@ source tree ── scripts/convert.py ──▶ .sources/  (Markdown mirror + QA
   merged PDF produced 10.7% of all chunks until deduped.
 - **Shared embedding cache**: `.vault-meta/embed-cache.json` is keyed by
   text — a passage embedded for one tier is free for the other.
+
+## Deprioritized tiers
+
+Some material has to stay searchable without ever being allowed to win. Two
+kinds recur:
+
+- **Retired but not deleted.** Archives exist because deletion loses real
+  answers — "why was this retired, and when?" is a legitimate query. In one
+  measured vault the archive was *larger than the live set*: 2,616 retired
+  questions against 1,832 active ones.
+- **Derived from a source the vault also holds.** A machine or vendor summary
+  of a transcript covers the same subject in the same vocabulary, shorter and
+  denser — the exact shape retrieval rewards. It competes with its own source
+  and sometimes beats it.
+
+Indexing either one flat produces a specific, quiet failure: the answer cites
+a superseded or second-hand document while the authoritative one sits a rank
+below. Two instances from this toolkit's own history:
+
+- A retired question was returned for wording a live question also matched.
+- A source document **deleted** from a vault kept its corpus chunks — deleting
+  a page does not prune them — and came back as the **top two hits** for the
+  very topic it had been removed over, outranking its replacement.
+
+The fix is a tier of its own with a **negative** ranking bonus:
+
+```bash
+corpus-tier.py set "Question Bank Archive" --tier archive --bonus -0.02
+corpus-tier.py list        # check the handicap against your top tier
+corpus-index.py --rebuild && corpus-dedup.py --apply && corpus-bm25.py build
+```
+
+Against Tier 1's default `+0.030` a `-0.020` bonus is a **0.050 handicap** —
+wide enough to lose every tie on shared wording, narrow enough that a
+genuinely better match still surfaces. `corpus-tier.py list` prints that gap
+per tier, because the interesting number is the *difference*, and it stops
+being 0.050 the moment you add a tier with a higher bonus.
+
+Two operational notes that cost real time when missed:
+
+- **`corpus-tiers.json` is gitignored on purpose** — it is per-vault config
+  the toolkit must not ship. A tier registered by hand is therefore state a
+  fresh clone loses silently, reverting to a zero bonus with nothing
+  announcing it. Have the pipeline that *creates* the folder register the
+  tier too, so the setting is reproducible from code.
+- **After removing any source document**, run `prune_corpus_chunks`-style
+  cleanup, then `corpus-dedup.py --apply`, then `corpus-bm25.py build`, in
+  that order. Pruning alone can leave the surviving copy's chunks excluded in
+  favour of the copy just removed: dedup keeps the copy in the document with
+  the fewest chunks and breaks ties on path, so an orphan can win the tie and
+  exclude 157 of a live document's 162 chunks. Measured, not hypothetical.
 
 ## The rebind contract
 

@@ -48,19 +48,14 @@ CORPUS_META = VAULT_ROOT / ".vault-meta" / "corpus"
 CHUNKS = CORPUS_META / "chunks"
 SCHEMA_VERSION = 1
 
-# chunk_body() flushes only AFTER a paragraph pushes it past the target, so a
-# single huge paragraph becomes a single huge chunk. Hand-written wiki pages
-# never do that; converted PDFs do constantly — flattened tables and OCR'd
-# pages arrive as one unbroken block. Measured on this corpus: 7.2% of chunks
-# over 6,000 chars, the largest 139,626 (70x the target).
-#
-# That breaks reranking outright. nomic-embed-text returns HTTP 500 above
-# ~5,000 chars of input (verified: 5,000 ok, 6,000 fails), so every oversized
-# chunk silently fell back to BM25 order. It also skews BM25 length
-# normalization and makes a "chunk" useless as a citable unit.
-#
-# 4,000 leaves room for the ~400-char prefix inside that ceiling.
-MAX_RAW_CHARS = 4000
+# Oversized chunks: converted PDFs arrive with flattened tables and OCR'd
+# pages as one unbroken block — measured here in 2026-07, 7.2% of chunks over
+# 6,000 chars, the largest 139,626 (70x the target) — and nomic-embed-text
+# returns HTTP 500 above ~5,000, so those chunks silently lost their rerank.
+# The cap (MAX_RAW_CHARS = 4,000, leaving room for the ~400-char prefix) and
+# the splitter now live in contextual-prefix.py, which owns chunk_body(); the
+# original note that hand-written wiki pages "never do that" was wrong and is
+# corrected there.
 
 
 def wp(p):
@@ -123,38 +118,13 @@ def normalize_filler(text):
     return re.sub(r"([.\-_=·~*])\1{3,}", r"\1\1\1", text)
 
 
-def split_oversized(chunks, limit=MAX_RAW_CHARS):
-    """Break chunks over `limit` on sentence boundaries, hard-slicing only when
-    a single sentence is itself too long (tables flattened to one line do this).
-    Chunks at or under the limit pass through untouched, so the common case is
-    identical to the wiki tier's output."""
-    out = []
-    for text in chunks:
-        if len(text) <= limit:
-            out.append(text)
-            continue
-        # Buffer is per-chunk so sentences never merge across a boundary the
-        # paragraph chunker deliberately drew.
-        buf = ""
-        for piece in re.split(r"(?<=[.!?])\s+", text):
-            if not piece.strip():
-                continue
-            if len(piece) > limit:
-                if buf:
-                    out.append(buf)
-                    buf = ""
-                for i in range(0, len(piece), limit):
-                    out.append(piece[i:i + limit])
-            elif not buf:
-                buf = piece
-            elif len(buf) + 1 + len(piece) <= limit:
-                buf += " " + piece
-            else:
-                out.append(buf)
-                buf = piece
-        if buf:
-            out.append(buf)
-    return out
+# split_oversized() MOVED to contextual-prefix.py on 2026-08-12 and is now
+# called through cp.split_oversized(). It lived here while the wiki tier was
+# believed not to need it — wrong, as it turned out: a Markdown table is one
+# paragraph, so the register pages produced 28,000-char chunks of their own.
+# One implementation now serves both tiers, and cp.chunk_body() applies it
+# itself, which makes the call below a no-op guard rather than the enforcement
+# point. Kept explicit so this file still states the invariant it depends on.
 
 
 def strip_suffix(name):
@@ -261,7 +231,7 @@ def main():
         chunk_dir = os.path.join(str(CHUNKS), addr)
         os.makedirs(wp(chunk_dir), exist_ok=True)
 
-        for idx, raw in enumerate(split_oversized(cp.chunk_body(body))):
+        for idx, raw in enumerate(cp.split_oversized(cp.chunk_body(body))):
             n_chunks += 1
             path = os.path.join(chunk_dir, f"chunk-{idx:03d}.json")
             body_hash = sha256(raw)

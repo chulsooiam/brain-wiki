@@ -84,6 +84,25 @@ CHUNK_TARGET_TOKENS = 500  # rough; we approximate via chars/4
 CHUNK_TARGET_CHARS = CHUNK_TARGET_TOKENS * 4
 CHUNK_OVERLAP_CHARS = 200
 
+# chunk_body() flushes only AFTER a paragraph pushes it past the target, so a
+# single huge paragraph becomes a single huge chunk. That is not a
+# converted-PDF-only problem, as this file long assumed: a Markdown TABLE has
+# no blank lines between its rows, so the whole table is one paragraph. The
+# contradictions register hit 28,246 chars in chunk 0 that way, 14x the
+# target; the acronym glossary 20,541; Action Points 10,408. Measured
+# 2026-08-12: ~150 wiki chunks over 5,000 chars.
+#
+# Above ~5,000 chars nomic-embed-text returns HTTP 500 (verified: 5,000 ok,
+# 6,000 fails), so every one of those chunks silently fell back to BM25 order
+# with no rerank at all — the failure is invisible except for one stderr line
+# per query. It also skews BM25 length normalization and makes a "chunk"
+# useless as a citable unit.
+#
+# 4,000 leaves room for the ~400-char prefix inside that ceiling. The corpus
+# tier has capped at this value since 2026-07-27; this is the same constant
+# and the same algorithm, now applied to both tiers from one place.
+MAX_RAW_CHARS = 4000
+
 ANTHROPIC_MODEL = "claude-haiku-4-5-20251001"
 ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages"
 ANTHROPIC_TIMEOUT_SEC = 30
@@ -149,11 +168,56 @@ def derive_synthetic_address(page_path):
     return "syn-" + h[:6]
 
 
-def chunk_body(body, target_chars=CHUNK_TARGET_CHARS, overlap=CHUNK_OVERLAP_CHARS):
+def split_oversized(chunks, limit=MAX_RAW_CHARS):
+    """Break chunks over `limit` on sentence boundaries, hard-slicing only when
+    a single sentence is itself too long (a flattened table row, or a Markdown
+    table whose rows carry no sentence punctuation, does this). Chunks at or
+    under the limit pass through untouched, so pages that never overflowed
+    keep byte-identical chunk text and re-chunk to the same body_hash.
+
+    Ported from corpus-index.py 2026-08-12 and now shared: it lives here
+    because this module owns chunk_body(), and both tiers chunk through it.
+    """
+    out = []
+    for text in chunks:
+        if len(text) <= limit:
+            out.append(text)
+            continue
+        # Buffer is per-chunk so sentences never merge across a boundary the
+        # paragraph chunker deliberately drew.
+        buf = ""
+        for piece in re.split(r"(?<=[.!?])\s+", text):
+            if not piece.strip():
+                continue
+            if len(piece) > limit:
+                if buf:
+                    out.append(buf)
+                    buf = ""
+                for i in range(0, len(piece), limit):
+                    out.append(piece[i:i + limit])
+            elif not buf:
+                buf = piece
+            elif len(buf) + 1 + len(piece) <= limit:
+                buf += " " + piece
+            else:
+                out.append(buf)
+                buf = piece
+        if buf:
+            out.append(buf)
+    return out
+
+
+def chunk_body(body, target_chars=CHUNK_TARGET_CHARS, overlap=CHUNK_OVERLAP_CHARS,
+               max_chars=MAX_RAW_CHARS):
     """Split body into overlapping chunks on paragraph boundaries when possible.
     Heuristic: walk the body, accumulate paragraphs until len exceeds target,
     flush, then keep the trailing `overlap` chars as the seed of the next chunk.
     Empty paragraphs collapse to single boundaries.
+
+    Every returned chunk is then capped at `max_chars` (see split_oversized and
+    the MAX_RAW_CHARS note above) — without that, one unbroken paragraph such
+    as a Markdown table becomes one unembeddable chunk. Pass max_chars=0 to
+    disable the cap and get the raw paragraph split.
     """
     paragraphs = [p.strip() for p in re.split(r"\n\s*\n", body) if p.strip()]
     chunks = []
@@ -174,7 +238,7 @@ def chunk_body(body, target_chars=CHUNK_TARGET_CHARS, overlap=CHUNK_OVERLAP_CHAR
     if not chunks and body.strip():
         # tiny page — single chunk
         chunks = [body.strip()]
-    return chunks
+    return split_oversized(chunks, max_chars) if max_chars else chunks
 
 
 def synthetic_prefix(fm, body, chunk_text):

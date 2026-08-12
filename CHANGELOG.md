@@ -4,6 +4,35 @@ All notable changes to brain-wiki. Format: [Keep a Changelog](https://keepachang
 
 ## [Unreleased]
 
+### Added
+- **`scripts/corpus-tier.py`** — one place that owns corpus tier registration:
+  `list`, `set`, `remove`. `list` prints each tier's effective bonus **and its
+  gap against the top tier**, since the ranking behaviour depends on the
+  difference, not the absolute value. Default bonuses are read from
+  `corpus-retrieve.py` rather than copied, so they cannot drift.
+- **Deprioritized tiers as a documented pattern** (`docs/corpus-query.md`).
+  Material that must stay searchable without ever winning — retired-but-not-
+  deleted archives, and summaries derived from a source the vault also holds —
+  gets its own tier with a negative bonus. Both failure modes it prevents were
+  measured, not theorised: a retired question outranking a live one on shared
+  wording, and a deleted document's un-pruned chunks returning as the top two
+  hits for the topic it was removed over.
+- `tests/test_corpus_tier.py` — 9 hermetic tests, including that `set` merges
+  rather than replacing (the inline-JSON bug that motivated the tool), that a
+  bonus shared by two folders survives removing one of them, and that a
+  malformed config aborts instead of being overwritten — it is gitignored, so a
+  clobber is unrecoverable.
+
+### Fixed
+- **Wiki chunks are capped at 4,000 chars like corpus chunks.** `split_oversized`
+  moved into `contextual-prefix.py`, which owns `chunk_body()`, so both tiers
+  apply it from one implementation. The cap was previously corpus-only on the
+  stated grounds that hand-written pages never emit one huge paragraph — untrue
+  for **Markdown tables**, which carry no blank line between rows, so a whole
+  register page chunked as a single 28,000-char block. Above ~5,000 chars the
+  embedder returns HTTP 500 and reranking silently degrades to BM25 order, so
+  the failure announced itself only as one stderr line per query.
+
 ## [2.4.0] - 2026-08-08 (meetings change pages, not just links)
 
 Links make a meeting *findable* from an entity page; they do not update what the page *says*. This release closes that gap in both directions: prose pages join the link graph, and meeting content propagates into page prose under an explicit evidence hierarchy.

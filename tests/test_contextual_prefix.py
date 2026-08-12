@@ -98,6 +98,48 @@ def test_payload_attaches_cache_control_by_body_size():
                     "cache_control" not in captured["body"]["system"][1])
 
 
+# ─── Chunk size cap (2026-08-12) ────────────────────────────────────────────
+# The defect these cover: a Markdown table has no blank line between its rows,
+# so the paragraph chunker treated a whole register page as ONE paragraph and
+# emitted a 28,246-char chunk. nomic-embed-text 500s above ~5,000, so those
+# chunks lost their rerank silently, for months.
+def test_markdown_table_is_split():
+    row = "| " + " | ".join(["cell text here"] * 8) + " |\n"
+    body = "# Page\n\n" + row * 400          # one paragraph, ~50k chars
+    chunks = cp.chunk_body(body)
+    assert_true("giant Markdown table yields >1 chunk", len(chunks) > 1)
+    assert_true("every chunk within MAX_RAW_CHARS",
+                all(len(c) <= cp.MAX_RAW_CHARS for c in chunks))
+
+
+def test_unbroken_run_is_hard_sliced():
+    # No sentence punctuation anywhere: the sentence splitter cannot help, so
+    # the hard-slice path is the only thing standing between this and a
+    # single unembeddable chunk.
+    chunks = cp.chunk_body("word " * 4000)
+    assert_true("punctuation-free body still capped",
+                all(len(c) <= cp.MAX_RAW_CHARS for c in chunks))
+
+
+def test_small_pages_are_untouched():
+    # Regression guard: capping must not re-chunk pages that never overflowed,
+    # or every page's body_hash churns on rebuild for no reason.
+    body = "\n\n".join(f"Paragraph {i}. It has two sentences." for i in range(20))
+    assert_eq("under-cap page identical with and without cap",
+              cp.chunk_body(body, max_chars=0), cp.chunk_body(body))
+
+
+def test_cap_can_be_disabled():
+    # Assert on the largest chunk, not the count: chunk_body also emits a
+    # trailing overlap-seeded remnant, which is pre-existing behaviour and not
+    # what this test is about.
+    body = "x" * 9000
+    assert_eq("max_chars=0 leaves the oversized chunk whole",
+              9000, max(len(c) for c in cp.chunk_body(body, max_chars=0)))
+    assert_true("cap on splits the same body",
+                all(len(c) <= cp.MAX_RAW_CHARS for c in cp.chunk_body(body)))
+
+
 def main():
     print("=== test_contextual_prefix.py ===")
     test_below_floor_returns_none()
@@ -105,6 +147,10 @@ def main():
     test_at_floor_returns_ephemeral()
     test_above_floor_returns_ephemeral()
     test_payload_attaches_cache_control_by_body_size()
+    test_markdown_table_is_split()
+    test_unbroken_run_is_hard_sliced()
+    test_small_pages_are_untouched()
+    test_cap_can_be_disabled()
     print("\nAll contextual-prefix tests passed.")
 
 
