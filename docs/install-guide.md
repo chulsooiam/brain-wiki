@@ -41,7 +41,10 @@ bash bin/setup-vault.sh
 
 Then in Obsidian: **Manage Vaults → Open folder as vault → select `brain-wiki/`**
 
-Open Claude Code in the same folder and type `/wiki`.
+Open Claude Code in the same folder and type `/wiki`. On a fresh vault it
+offers the guided quick start (five skippable questions that scaffold the
+wiki and ingest a folder of sources for you — or type `/quickstart`
+directly); decline it to get the standard one-question setup.
 
 ### Option 2: Install as Claude Code plugin
 

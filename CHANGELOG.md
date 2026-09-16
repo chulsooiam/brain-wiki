@@ -5,6 +5,21 @@ All notable changes to brain-wiki. Format: [Keep a Changelog](https://keepachang
 ## [Unreleased]
 
 ### Added
+- **`quickstart`: guided five-question first-run** (skill + `/quickstart`
+  command). Opt-in gate on any fresh vault (offered by `/wiki` too), then five
+  skippable questions — purpose, about-you, organization mode, tiered source
+  folders, requested pages — each skip with a stated fallback, then the build:
+  mode, scaffold, copy-convert + tier registration + corpus index, skeleton
+  pages, first ingest, closing report. Progress is durable
+  (`scripts/quickstart-state.py`, atomic writes, malformed-state abort), so an
+  interrupted run resumes instead of re-asking; answers are preserved in
+  `wiki/meta/quickstart-brief.md`. Guardrails: user source folders are
+  read-only (copy-convert only), >200 files proposes batched ingestion, no git
+  operations unasked, missing ollama degrades to BM25-only and says so. The
+  skip-everything path lands exactly where plain `/wiki` lands today.
+- `tests/test_quickstart_state.py` — 30 hermetic assertions over the state
+  CLI: lifecycle, resume-refuses-clobber, validation, malformed-state abort,
+  atomicity.
 - **`scripts/corpus-tier.py`** — one place that owns corpus tier registration:
   `list`, `set`, `remove`. `list` prints each tier's effective bonus **and its
   gap against the top tier**, since the ranking behaviour depends on the

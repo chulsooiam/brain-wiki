@@ -114,6 +114,8 @@ Open the folder in Obsidian: **Manage Vaults → Open folder as vault → select
 
 Open Claude Code in the same folder. Type `/wiki`.
 
+On a fresh vault, `/wiki` offers a **guided quick start** (also directly via `/quickstart`): five short questions — what the wiki is for, about you, how to organize it, a folder (or tier-1/tier-2 pair) of source documents to build from, and any pages you already want. Every question is skippable, and the whole thing is resumable if interrupted. Answer them and the wiki is scaffolded, your sources converted and indexed, and a first ingest run — instead of starting from an empty vault.
+
 > ℹ️ `setup-vault.sh` configures `graph.json` (filter + colors), `app.json` (excludes plugin dirs), and `appearance.json` (enables CSS). Run it once before the first Obsidian open. You get the fully pre-configured graph view, color scheme, and wiki structure out of the box.
 
 ---
@@ -162,6 +164,7 @@ Then scaffold the full wiki structure.
 | You say | Claude does |
 |---------|------------|
 | `/wiki` | Setup check, scaffold, or continue where you left off |
+| `/quickstart` | Guided first-run: five skippable questions, then scaffold + tiered source ingest |
 | `ingest [file]` | Read source, create 8-15 wiki pages, update index and log |
 | `ingest all of these` | Batch process multiple sources, then cross-reference |
 | `what do you know about X?` | Read index, drill into relevant pages, synthesize answer |
