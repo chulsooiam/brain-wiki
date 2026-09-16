@@ -626,8 +626,10 @@ An optional opt-in extension (`bash bin/setup-dragonscale.sh`) that adds four me
 | Claude Code | latest | https://claude.com/claude-code |
 | Obsidian | v1.9.10+ (for Bases) | https://obsidian.md. v1.6+ works with Dataview fallback. |
 | Python | 3.10+ | For the optional retrieval pipeline and the test suite |
-| Bash | 4.0+ (or zsh) | For setup scripts |
+| Bash | 4.0+ (or zsh) | For setup scripts. On Windows: **Git Bash** (comes with Git) or WSL |
 | Git | any | For vault auto-commits via the Obsidian Git plugin |
+
+**Not required:** Claude Desktop — the package runs through Claude Code (and also works with Gemini / Codex / Cursor / Windsurf via their instruction files). Ollama is optional, not a requirement: see below.
 
 **Optional:**
 
