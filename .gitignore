@@ -149,3 +149,8 @@ _attachments/
 
 # machine-local Claude Code memory
 CLAUDE.local.md
+
+# Quickstart interview runtime state (resumable progress; the durable record
+# is wiki/meta/quickstart-brief.md)
+.vault-meta/quickstart-state.json
+.vault-meta/quickstart-state.*.tmp
