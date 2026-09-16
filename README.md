@@ -9,6 +9,16 @@
 [![Obsidian](https://img.shields.io/badge/Obsidian-v1.9.10%2B-7c3aed)](https://obsidian.md)
 [![Agent Skills](https://img.shields.io/badge/Agent%20Skills-Compatible-blue)](https://agentskills.io)
 
+> **New to git? These five lines are all you need.**
+>
+> - Install [Git](https://git-scm.com/downloads) — the default options are fine. Then open a terminal: **Git Bash** on Windows, **Terminal** on macOS/Linux.
+> - Copy this project to your computer: `git clone https://github.com/chulsooiam/brain-wiki`
+> - Step into the folder: `cd brain-wiki`
+> - Set it up: `bash bin/setup-vault.sh` — then follow [Quick Start](#quick-start) below.
+> - Later, to get updates: run `git pull` inside the folder.
+>
+> Nothing you type here can break the project online — your copy is yours.
+
 Claude + Obsidian knowledge companion and self-organizing AI second brain. A running AI notetaker that builds and maintains a persistent, compounding wiki vault. Every source you add gets integrated. Every question you ask pulls from everything that has been read. Knowledge compounds like interest.
 
 Open-source Obsidian AI plugin for AI note-taking, personal knowledge management (PKM), second-brain workflows, and a private Notion alternative. **21 Claude Code skills**, multi-agent support, multi-writer safe (v1.7+), first-class methodology modes (LYT / PARA / Zettelkasten / Generic via v1.8), the 10-principle thinking framework (v1.9), and a source-corpus retrieval tier with per-document conversion (v2.0). Based on [Andrej Karpathy's LLM Wiki pattern](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f).

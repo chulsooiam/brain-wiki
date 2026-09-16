@@ -4,6 +4,8 @@ All notable changes to brain-wiki. Format: [Keep a Changelog](https://keepachang
 
 ## [Unreleased]
 
+## [2.5.0] - 2026-09-17
+
 ### Added
 - **`quickstart`: guided five-question first-run** (skill + `/quickstart`
   command). Opt-in gate on any fresh vault (offered by `/wiki` too), then five
