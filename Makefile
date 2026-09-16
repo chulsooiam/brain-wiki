@@ -4,7 +4,7 @@
 .PHONY: test test-address test-tiling test-boundary test-bm25 test-retrieve \
         test-lock test-concurrent test-mode test-contextual test-transcript \
         test-depth test-forms test-lineage test-glossary test-queue \
-        test-corpus test-convert test-register dist \
+        test-corpus test-convert test-register test-corpus-tier dist \
         setup-dragonscale setup-retrieve setup-mode \
         clean-test-state help
 
@@ -26,12 +26,13 @@ help:
 	@echo "  make test-lineage     scripts/lineage-check.py tests (python, hermetic)"
 	@echo "  make test-glossary    scripts/glossary-seed.py tests (python, hermetic)"
 	@echo "  make test-queue       scripts/work-queue.py tests (python, hermetic)"
+	@echo "  make test-corpus-tier scripts/corpus-tier.py tests (python, hermetic)"
 	@echo "  make setup-dragonscale Run bin/setup-dragonscale.sh against this vault"
 	@echo "  make setup-retrieve   Run bin/setup-retrieve.sh against this vault (opt-in v1.7)"
 	@echo "  make setup-mode       Run bin/setup-mode.sh to pick a methodology mode (opt-in v1.8)"
 	@echo "  make clean-test-state Remove runtime lockfiles and tiling/embed caches"
 
-test: test-address test-tiling test-boundary test-bm25 test-retrieve test-lock test-concurrent test-mode test-contextual test-transcript test-depth test-forms test-lineage test-glossary test-queue test-corpus test-convert test-register
+test: test-address test-tiling test-boundary test-bm25 test-retrieve test-lock test-concurrent test-mode test-contextual test-transcript test-depth test-forms test-lineage test-glossary test-queue test-corpus test-convert test-register test-corpus-tier
 	@echo ""
 	@echo "All tests passed."
 
@@ -104,6 +105,10 @@ test-corpus:
 
 test-convert:
 	@python3 tests/test_convert.py
+
+test-corpus-tier:
+	@echo "=== test_corpus_tier.py ==="
+	@python3 tests/test_corpus_tier.py
 
 # Clean distribution artifact: tracked files at HEAD only — no .sources/,
 # no .vault-meta runtime state, no personal content. This (or a squashed
