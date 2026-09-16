@@ -101,6 +101,7 @@ Route to the correct operation based on what the user says:
 
 | User says | Operation | Sub-skill |
 |-----------|-----------|-----------|
+| "quick start", "/quickstart", "guided setup" | QUICKSTART | `quickstart` |
 | "scaffold", "set up vault", "create wiki" | SCAFFOLD | this skill |
 | "ingest [source]", "process this", "add this" | INGEST | `wiki-ingest` |
 | "what do you know about X", "query:" | QUERY | `wiki-query` |
@@ -114,6 +115,11 @@ Route to the correct operation based on what the user says:
 ## SCAFFOLD Operation
 
 Trigger: user describes what the vault is for.
+
+On a fresh vault (no `wiki/hot.md`), offer the guided quick start before
+scaffolding: read the `quickstart` skill and follow its gate question. An
+accepted or resumed quickstart replaces the steps below (it runs this
+scaffold itself, seeded from its interview). Declined, continue here.
 
 Steps:
 
