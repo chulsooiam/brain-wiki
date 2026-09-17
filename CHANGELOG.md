@@ -4,6 +4,20 @@ All notable changes to brain-wiki. Format: [Keep a Changelog](https://keepachang
 
 ## [Unreleased]
 
+## [2.5.1] - 2026-09-18
+
+### Fixed
+- **Quickstart was never offered on the main install path.** The fresh-vault
+  test was "no `wiki/hot.md`", but the cloned repo ships a seed `hot.md`
+  ("The vault is freshly initialized"), so `/wiki` skipped the offer for every
+  clone-as-vault user; only a direct `/quickstart` reached it. Fresh now means
+  `hot.md` missing **or** still holding the seed line, and the closing report
+  rewrites `hot.md`, which is what retires the flag. Found by reproducing a
+  new user's clone → `setup-vault.sh` → `/wiki` sequence.
+- README beginner block says where `git clone` puts the folder (inside the
+  terminal's current directory — Git Bash on Windows starts in `C:\Users\<you>`),
+  after a first user could not find it.
+
 ## [2.5.0] - 2026-09-17
 
 ### Added

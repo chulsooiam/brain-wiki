@@ -116,7 +116,9 @@ Route to the correct operation based on what the user says:
 
 Trigger: user describes what the vault is for.
 
-On a fresh vault (no `wiki/hot.md`), offer the guided quick start before
+On a fresh vault — `wiki/hot.md` missing or still holding the seed line
+"The vault is freshly initialized" (the cloned repo ships that placeholder,
+so absence alone is the wrong test) — offer the guided quick start before
 scaffolding: read the `quickstart` skill and follow its gate question. An
 accepted or resumed quickstart replaces the steps below (it runs this
 scaffold itself, seeded from its interview). Declined, continue here.

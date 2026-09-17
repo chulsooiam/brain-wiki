@@ -28,7 +28,10 @@ Run `python3 scripts/quickstart-state.py status` first.
   Start over = `begin --force`.
 - `DONE` → say the vault already completed quickstart and route to the normal
   `wiki` skill flow. Do not re-run unless the user explicitly asks.
-- `NOT_STARTED` → offer the gate question:
+- `NOT_STARTED` → offer the gate question. A vault counts as fresh when
+  `wiki/hot.md` is missing **or** still contains the seed line "The vault is
+  freshly initialized" — the cloned repo ships that placeholder, so testing
+  for absence alone would never fire on the main install path:
 
 > This looks like a fresh vault. Want the guided quick start? Five short
 > questions — all skippable — and I'll build the wiki from your answers,
@@ -121,7 +124,8 @@ targets for cross-references.
 
 **`report`** — close out:
 1. `python3 scripts/quickstart-state.py finish`
-2. Update `hot.md` with what was built.
+2. Rewrite `hot.md` with what was built — this replaces the seed placeholder,
+   which is what marks the vault as no longer fresh.
 3. Tell the user, concretely: mode, folders created, sources converted (n of
    m, any failures named), tiers registered, pages created, what the first
    query commands are (`/wiki`, `/corpus-query`, `/combined-query`).

@@ -12,7 +12,7 @@
 > **New to git? These five lines are all you need.**
 >
 > - Install [Git](https://git-scm.com/downloads) — the default options are fine. Then open a terminal: **Git Bash** on Windows, **Terminal** on macOS/Linux.
-> - Copy this project to your computer: `git clone https://github.com/chulsooiam/brain-wiki`
+> - Copy this project to your computer: `git clone https://github.com/chulsooiam/brain-wiki` — this creates a `brain-wiki` folder **inside the folder your terminal is currently in** (on Windows, Git Bash starts in `C:\Users\<you>`; type `pwd` to see it).
 > - Step into the folder: `cd brain-wiki`
 > - Set it up: `bash bin/setup-vault.sh` — then follow [Quick Start](#quick-start) below.
 > - Later, to get updates: run `git pull` inside the folder.
