@@ -4,6 +4,20 @@ All notable changes to brain-wiki. Format: [Keep a Changelog](https://keepachang
 
 ## [Unreleased]
 
+## [2.5.2] - 2026-09-18
+
+### Fixed
+- **`/wiki` was "unknown command" in a cloned vault.** `/wiki`, `/quickstart`,
+  `/save`, `/canvas` and `/autoresearch` lived only in `commands/`, the
+  plugin-install layout, so Option 1 (clone as vault) on a clean machine had
+  none of them — the README's "type `/wiki`" was only true after a plugin
+  install nobody was told to do. All five now also ship as project-scope
+  commands in `.claude/commands/`, the same mechanism the four corpus
+  commands already used, and load from the folder itself. A parity test
+  keeps the two copies identical. Reported by a first user on a new laptop.
+- README and install guide say Claude Code must be started *inside* the
+  folder (`cd brain-wiki`, then `claude`) for project-scope commands to load.
+
 ## [2.5.1] - 2026-09-18
 
 ### Fixed

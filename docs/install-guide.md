@@ -217,7 +217,7 @@ claude mcp add-json obsidian-vault '{
 
 | Problem | Fix |
 |---------|-----|
-| `/wiki` says "not found" | Make sure `brain-wiki` plugin is enabled: `claude plugin list` |
+| `/wiki` says "not found" / "unknown command" | Cloned vault: Claude Code must be started **inside** the `brain-wiki` folder (`cd brain-wiki` then `claude`); the commands are project-scoped. Plugin install: check it is enabled with `claude plugin list` |
 | Graph colors reset after closing Obsidian | Open Graph view → gear → Color groups → re-add once. Permanent after that. |
 | Excalidraw not loading | Run `bash bin/setup-vault.sh` to download `main.js` (8MB, not in git) |
 | Dashboard shows no results | Install the **Dataview** plugin from Community Plugins |

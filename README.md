@@ -122,7 +122,7 @@ bash bin/setup-vault.sh
 
 Open the folder in Obsidian: **Manage Vaults → Open folder as vault → select `brain-wiki/`**.
 
-Open Claude Code in the same folder. Type `/wiki`.
+Open Claude Code **in the same folder** (`cd brain-wiki`, then `claude`). Type `/wiki`. No plugin install needed — the commands are project-scoped and load from the folder itself.
 
 On a fresh vault, `/wiki` offers a **guided quick start** (also directly via `/quickstart`): five short questions — what the wiki is for, about you, how to organize it, a folder (or tier-1/tier-2 pair) of source documents to build from, and any pages you already want. Every question is skippable, and the whole thing is resumable if interrupted. Answer them and the wiki is scaffolded, your sources converted and indexed, and a first ingest run — instead of starting from an empty vault.
 

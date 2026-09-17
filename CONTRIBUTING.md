@@ -12,6 +12,14 @@ Three constraints shape every change:
 
 The full kernel lives in [`/best-practices`](https://github.com/AgriciDaniel/best-practices) (composable Claude Code skill). The pre-commit verifier agent at [`agents/verifier.md`](agents/verifier.md) enforces it for non-trivial changes.
 
+## Commands ship twice
+
+`commands/<name>.md` is what the plugin install exposes; `.claude/commands/<name>.md`
+is what a cloned vault exposes with no plugin. Edit the root file, then copy
+it over the mirror keeping the mirror's leading provenance note and its
+`(`skills/<name>/SKILL.md` at the vault root)` expansions.
+`tests/test_command_parity.py` fails the suite if they drift.
+
 ## Workflow
 
 ### 1. Open an issue first (for non-trivial changes)
